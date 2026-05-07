@@ -267,11 +267,13 @@
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="batchSize" class="form-label">Batch Size <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How many text chunks are processed per step. 64 = faster training but uses more GPU memory. Reduce if you get out-of-memory errors."></i></label>
+                                    <label for="batchSize" class="form-label">Batch Size <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How many text chunks are processed per step. Higher values train faster but use more GPU memory. Use 4–8 for Small/Medium models on limited memory; 16–64 for Tiny/Nano if memory allows."></i></label>
                                     <select class="form-select" id="batchSize">
-                                        <option value="16">16 - Low VRAM</option>
-                                        <option value="32" selected>32 - Balanced</option>
-                                        <option value="64">64 - Fast</option>
+                                        <option value="4">4 - Safest for Small/Medium</option>
+                                        <option value="8">8 - Recommended for Small</option>
+                                        <option value="16" selected>16 - Balanced for Tiny</option>
+                                        <option value="32">32 - Fast for Nano/Tiny</option>
+                                        <option value="64">64 - Maximum throughput</option>
                                     </select>
                                 </div>
                                 <div class="mb-2">

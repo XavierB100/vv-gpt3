@@ -1,0 +1,950 @@
+{% extends "base.html" %}
+
+{% block title %}Architecture & Theory — VV-GPT3 Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+    .about-hero {
+        text-align: center;
+        padding: 50px 0 40px;
+        position: relative;
+    }
+    
+    .about-hero::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 20%; right: 20%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
+    }
+    
+    .about-hero h1 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 3rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 16px;
+        letter-spacing: -1px;
+    }
+
+    .about-hero .version-badge {
+        display: inline-block;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.4);
+        color: var(--accent-indigo);
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .doc-section {
+        margin-top: 55px;
+    }
+
+    .doc-title {
+        font-family: 'Outfit', sans-serif;
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .doc-title i {
+        color: var(--accent-indigo);
+    }
+
+    .doc-subtitle {
+        font-family: 'Outfit', sans-serif;
+        color: var(--accent-cyan);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 28px 0 14px;
+    }
+
+    .doc-text {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        margin-bottom: 20px;
+    }
+
+    .doc-text strong {
+        color: var(--text-primary);
+    }
+
+    /* Math / Code blocks */
+    .math-block {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid var(--border-glass);
+        border-left: 3px solid var(--accent-indigo);
+        border-radius: 10px;
+        padding: 20px 24px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.88rem;
+        color: var(--accent-cyan);
+        margin: 18px 0;
+        overflow-x: auto;
+        line-height: 1.7;
+    }
+
+    .math-block .comment {
+        color: rgba(255,255,255,0.35);
+        font-style: italic;
+    }
+
+    .math-block .keyword {
+        color: var(--accent-indigo);
+        font-weight: 600;
+    }
+
+    .math-block .val {
+        color: var(--accent-emerald);
+    }
+
+    .math-block .op {
+        color: var(--accent-rose);
+    }
+
+    /* Comparison Table */
+    .vs-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 30px 0;
+        color: white;
+    }
+    
+    .vs-table th {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.1rem;
+        padding: 18px 20px;
+        border-bottom: 2px solid var(--border-glass);
+        text-align: left;
+    }
+    
+    .vs-table td {
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .vs-table td.highlight {
+        color: var(--accent-emerald);
+        font-weight: 600;
+        background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .vs-table td.old-tech {
+        color: var(--accent-rose);
+        opacity: 0.8;
+    }
+
+    /* Preset Table */
+    .preset-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 20px 0;
+        color: white;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+    }
+    .preset-table th {
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--border-glass);
+        text-align: left;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+    }
+    .preset-table td {
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        color: var(--text-secondary);
+    }
+    .preset-table tr:hover td {
+        background: rgba(99,102,241,0.05);
+    }
+
+    /* File Tree */
+    .file-tree-container {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 30px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.88rem;
+    }
+
+    .tree-folder { color: var(--accent-cyan); font-weight: 700; margin-top: 10px; }
+    .tree-file { color: var(--text-primary); margin-left: 24px; display: flex; }
+    .tree-comment { color: var(--text-muted); font-style: italic; margin-left: auto; font-family: 'Inter', sans-serif; font-size: 0.82rem; }
+    
+    .tech-pill {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        color: var(--accent-indigo);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+        margin: 0 8px 8px 0;
+    }
+
+    /* Numbered step cards */
+    .step-card {
+        position: relative;
+        padding-left: 50px;
+        margin-bottom: 28px;
+    }
+    .step-card .step-num {
+        position: absolute;
+        left: 0; top: 0;
+        width: 36px; height: 36px;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.4);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        color: var(--accent-indigo);
+        font-size: 0.95rem;
+    }
+
+    /* Glossary */
+    .glossary-term {
+        color: var(--accent-emerald);
+        font-weight: 600;
+    }
+
+    .divider {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
+        margin: 50px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pb-5">
+    <div class="col-lg-10">
+        
+        <div class="about-hero">
+            <div class="version-badge">V3.2.0 — Final Release</div>
+            <h1>Architecture & Theory Documentation</h1>
+            <p class="text-secondary fs-5">A comprehensive technical breakdown of the VV-GPT3 Neural Environment.<br>Everything needed to understand, reproduce, and extend this system.</p>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1: WHAT IS VV-GPT3 -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-info-circle"></i> What Is VV-GPT3?</h2>
+            <p class="doc-text">
+                <strong>VV-GPT3</strong> is a fully local, zero-cost AI training and inference platform built for macOS. It allows anyone to train their own GPT-2-class language model on custom text data — books, scripts, chat logs, notes — and then have live conversations with the resulting neural network, entirely on their own machine with no internet, no API keys, and no cloud costs.
+            </p>
+            <p class="doc-text">
+                The system is built on the same <strong>decoder-only causal transformer</strong> architecture invented by OpenAI for GPT-2 (June 2019), scaled down to run efficiently on consumer Apple Silicon hardware (M1/M2/M3/M4). It is not a wrapper around an existing AI — it trains a brand new neural network from scratch every time, using your data and your compute.
+            </p>
+            <p class="doc-text">
+                The web application wraps this engine in a professional-grade command center featuring real-time training telemetry, live loss charts, proactive overfitting detection, a persistent inference chat, and a model management hub — all rendered in a custom glassmorphic UI.
+            </p>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2: EVOLUTION -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-clock-history"></i> The Evolution: V1 → V3</h2>
+            <p class="doc-text">
+                The original application ("Homemade GPT" V1) was built as a minimum-viable exploration into text generation on Windows. It was functional but severely limited by primitive design choices. VV-GPT3 (V3) was rebuilt with modern local deep-learning practices and a safer VV-GPT3 workflow.
+            </p>
+            
+            <div class="glass-panel overflow-hidden">
+                <table class="vs-table m-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 22%;">Feature Layer</th>
+                            <th style="width: 39%; border-right: 1px solid var(--border-glass);">V1 "Homemade GPT"</th>
+                            <th style="width: 39%;">V3 "VV-GPT3"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tokenization</strong></td>
+                            <td class="old-tech">Character-level. The engine learned individual letters (a, b, c…). Vocabulary size equaled the number of unique characters (~66). No concept of words.</td>
+                            <td class="highlight">BPE (Byte Pair Encoding) via OpenAI's Tiktoken library. Vocabulary of 50,257 sub-word tokens. Understands word fragments, whole words, and common phrases as single units.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Attention</strong></td>
+                            <td class="old-tech">Manual nested Python loops for multi-head self-attention. Extremely slow, high memory overhead.</td>
+                            <td class="highlight">PyTorch SDPA (Scaled Dot-Product Attention) with automatic Flash Attention selection. Fused C++/CUDA kernels run directly in GPU memory.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Inference</strong></td>
+                            <td class="old-tech">Full context recomputation for every single character generated. O(n²) per token.</td>
+                            <td class="highlight">KV-Caching. Past attention computations are stored in a tensor buffer, achieving O(1) per-token generation after the initial prompt.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hardware</strong></td>
+                            <td class="old-tech">CPU-only. No GPU acceleration. Training took hours even on small datasets.</td>
+                            <td class="highlight">Apple MPS (Metal Performance Shaders) native for M-series GPU acceleration. Also supports NVIDIA CUDA and CPU fallback.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Training UI</strong></td>
+                            <td class="old-tech">Terminal-only output. No real-time monitoring, no loss curves, no checkpointing.</td>
+                            <td class="highlight">Real-time WebSocket telemetry with live Chart.js loss curves, overfit detection, parameter tooltips, persistent logs, and automatic best-model checkpointing.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Model Sizes</strong></td>
+                            <td class="old-tech">Single fixed architecture (~150K parameters).</td>
+                            <td class="highlight">6 configurable presets from Nano (~8M) to Large (~253M parameters with GPT-2 BPE), with adjustable dropout, block size, and batch size.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Platform</strong></td>
+                            <td class="old-tech">Windows-only with .bat launcher.</td>
+                            <td class="highlight">macOS-native with .command launcher, .app bundle creator, and Apple Silicon optimization.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 3: THE MATHEMATICS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-calculator"></i> The Mathematics of a Transformer</h2>
+            <p class="doc-text">
+                This section explains the exact mathematical operations the neural network performs, from raw text input to generated output. Every concept described here is implemented in <code>src/models/enhanced_gpt.py</code>.
+            </p>
+
+            <!-- 3.1 Tokenization -->
+            <h3 class="doc-subtitle">3.1 — Tokenization (Text → Numbers)</h3>
+            <p class="doc-text">
+                Neural networks cannot process text directly — they only understand numbers. <strong>Tokenization</strong> is the process of converting raw text into a sequence of integer IDs.
+            </p>
+            <p class="doc-text">
+                VV-GPT3 uses <strong>Byte Pair Encoding (BPE)</strong> via OpenAI's <code>tiktoken</code> library, the same tokenizer used by GPT-2, GPT-3, and GPT-4. BPE works by:
+            </p>
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <p class="doc-text mb-0">Starting with individual bytes/characters as the base vocabulary.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <p class="doc-text mb-0">Iteratively finding the most frequently occurring pair of adjacent tokens in the training corpus and merging them into a single new token.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <p class="doc-text mb-0">Repeating until the vocabulary reaches a target size (50,257 tokens for GPT-2).</p>
+            </div>
+            <div class="math-block">
+                <span class="comment">// Example: BPE tokenization</span><br>
+                <span class="keyword">Input:</span>  "to be or not to be"<br>
+                <span class="keyword">Tokens:</span> [1462, 307, 393, 407, 284, 307]<br>
+                <span class="comment">// Each number maps to a sub-word: "to" → 1462, " be" → 307, " or" → 393, etc.</span><br>
+                <span class="comment">// Notice: common words become single tokens. Rare words get split into pieces.</span>
+            </div>
+            <p class="doc-text">
+                This is vastly superior to <strong>character-level tokenization</strong> (V1), where "to be" would become <code>[t, o, ' ', b, e]</code> — 5 tokens instead of 2. BPE gives the model a much richer vocabulary and shorter sequences to process, dramatically improving both speed and output quality.
+            </p>
+
+            <!-- 3.2 Embeddings -->
+            <h3 class="doc-subtitle">3.2 — Embeddings (Numbers → Vectors)</h3>
+            <p class="doc-text">
+                Raw token IDs (like 1462) are meaningless numbers. <strong>Embeddings</strong> convert each token ID into a dense vector (a list of floating-point numbers) that the network can actually learn from.
+            </p>
+            <p class="doc-text">
+                VV-GPT3 uses two embedding layers that are summed together:
+            </p>
+            <div class="row g-4 mt-1">
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100">
+                        <h5 style="color: var(--accent-cyan); font-family: 'Outfit';"><i class="bi bi-hash"></i> Token Embedding (wte)</h5>
+                        <p class="doc-text" style="font-size: 0.95rem;">
+                            A lookup table of shape <code>[50257 × n_embd]</code>. Each of the 50,257 vocabulary tokens has its own learnable vector of dimension <code>n_embd</code> (e.g., 384 for Tiny). During training, these vectors adjust so that semantically similar tokens end up with similar vectors.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100">
+                        <h5 style="color: var(--accent-cyan); font-family: 'Outfit';"><i class="bi bi-geo-alt"></i> Position Embedding (wpe)</h5>
+                        <p class="doc-text" style="font-size: 0.95rem;">
+                            A lookup table of shape <code>[block_size × n_embd]</code>. Transformers process all tokens simultaneously (unlike RNNs which read left-to-right), so they have no inherent sense of word order. Position embeddings inject location information: token at position 0 gets one vector, position 1 gets another, etc.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="math-block">
+                <span class="comment">// The combined embedding for each token</span><br>
+                x = <span class="keyword">TokenEmbed</span>(token_id) <span class="op">+</span> <span class="keyword">PosEmbed</span>(position)<br>
+                x = <span class="keyword">Dropout</span>(x)<br><br>
+                <span class="comment">// For the Tiny preset:</span><br>
+                <span class="comment">// TokenEmbed: [50257 × 384] — each token gets a 384-dim vector</span><br>
+                <span class="comment">// PosEmbed:  [256 × 384]   — each position (0-255) gets a 384-dim vector</span><br>
+                <span class="comment">// Result x:  [batch × seq_len × 384]</span>
+            </div>
+
+            <!-- 3.3 Self-Attention -->
+            <h3 class="doc-subtitle">3.3 — Causal Self-Attention (The Core Innovation)</h3>
+            <p class="doc-text">
+                Self-attention is the mechanism that allows the model to understand <strong>relationships between words</strong>. For every token in the sequence, attention asks: "Which other tokens in this sequence are most relevant to predicting what comes next?"
+            </p>
+            <p class="doc-text">
+                The process works by projecting each token's embedding into three separate vectors:
+            </p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="glass-panel p-3 text-center">
+                        <h6 style="color: var(--accent-rose); font-family: 'Outfit';">Query (Q)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">"What am I looking for?"</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3 text-center">
+                        <h6 style="color: var(--accent-emerald); font-family: 'Outfit';">Key (K)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">"What do I contain?"</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3 text-center">
+                        <h6 style="color: var(--accent-cyan); font-family: 'Outfit';">Value (V)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">"What information do I carry?"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="math-block">
+                <span class="comment">// Step 1: Project embeddings into Q, K, V</span><br>
+                Q, K, V = <span class="keyword">Linear</span>(x) <span class="comment">// Single matrix multiply, then split into 3</span><br><br>
+                <span class="comment">// Step 2: Compute attention scores</span><br>
+                scores = (Q <span class="op">×</span> Kᵀ) <span class="op">/</span> <span class="val">√d_k</span><br>
+                <span class="comment">// d_k = dimension per head (384/6 = 64 for Tiny)</span><br>
+                <span class="comment">// The √d_k scaling prevents scores from growing too large</span><br><br>
+                <span class="comment">// Step 3: Apply causal mask (THE critical constraint)</span><br>
+                scores = scores <span class="op">+</span> <span class="keyword">CausalMask</span><br>
+                <span class="comment">// CausalMask is a lower-triangular matrix where:</span><br>
+                <span class="comment">//   allowed positions = 0</span><br>
+                <span class="comment">//   future positions  = -∞</span><br>
+                <span class="comment">// This forces the model to ONLY look at past/present tokens, never the future.</span><br>
+                <span class="comment">// Without this, the model would "cheat" by seeing the answer.</span><br><br>
+                <span class="comment">// Step 4: Normalize to probabilities and extract values</span><br>
+                weights = <span class="keyword">Softmax</span>(scores) <span class="comment">// Each row sums to 1.0</span><br>
+                output = weights <span class="op">×</span> V <span class="comment">// Weighted sum of value vectors</span>
+            </div>
+            <p class="doc-text">
+                <strong>Multi-Head Attention:</strong> Instead of computing one set of Q/K/V, VV-GPT3 computes multiple independent "heads" in parallel (6 heads for Tiny, 16 for Large). Each head can learn to attend to different types of relationships — one head might learn syntax, another might learn co-reference, etc. The outputs are concatenated and projected back to the original dimension.
+            </p>
+            <p class="doc-text">
+                <strong>Why "Causal"?</strong> The causal mask is what makes this a <em>language model</em> rather than just a pattern detector. By preventing the network from seeing future tokens, we force it to learn to <em>predict</em> the next token given only the past — which is exactly what we want during text generation.
+            </p>
+
+            <!-- 3.4 Feed-Forward Network -->
+            <h3 class="doc-subtitle">3.4 — Feed-Forward Network (MLP)</h3>
+            <p class="doc-text">
+                After attention, each token's representation passes through a <strong>feed-forward network</strong> (also called an MLP — Multi-Layer Perceptron). This is where the model does its "thinking" about what it's learned from the attention step.
+            </p>
+            <div class="math-block">
+                <span class="comment">// Two linear transformations with GELU activation</span><br>
+                hidden = <span class="keyword">GELU</span>(<span class="keyword">Linear₁</span>(x)) <span class="comment">// Expand: [384] → [1536] (4× expansion)</span><br>
+                output = <span class="keyword">Linear₂</span>(hidden) <span class="comment">// Contract: [1536] → [384]</span><br>
+                output = <span class="keyword">Dropout</span>(output)<br><br>
+                <span class="comment">// GELU (Gaussian Error Linear Unit) is a smooth activation function</span><br>
+                <span class="comment">// Unlike ReLU which has a hard cutoff at 0, GELU smoothly gates values,</span><br>
+                <span class="comment">// allowing small negative values through. This leads to better training.</span>
+            </div>
+
+            <!-- 3.5 The Transformer Block -->
+            <h3 class="doc-subtitle">3.5 — The Transformer Block (Putting It Together)</h3>
+            <p class="doc-text">
+                A single <strong>Transformer Block</strong> combines attention and the FFN with <strong>residual connections</strong> and <strong>layer normalization</strong>. VV-GPT3 uses <strong>pre-normalization</strong> (normalizing <em>before</em> each sub-layer rather than after), which is more numerically stable during training.
+            </p>
+            <div class="math-block">
+                <span class="comment">// One Transformer Block (pre-norm architecture)</span><br>
+                x = x <span class="op">+</span> <span class="keyword">Attention</span>(<span class="keyword">LayerNorm</span>(x)) <span class="comment">// Residual connection around attention</span><br>
+                x = x <span class="op">+</span> <span class="keyword">FFN</span>(<span class="keyword">LayerNorm</span>(x)) <span class="comment">// Residual connection around FFN</span><br><br>
+                <span class="comment">// The residual connections (the "+ x" parts) are critical.</span><br>
+                <span class="comment">// They create "skip paths" that allow gradients to flow directly</span><br>
+                <span class="comment">// backward through the network without vanishing. Without them,</span><br>
+                <span class="comment">// deep networks (6+ layers) would be nearly impossible to train.</span>
+            </div>
+            <p class="doc-text">
+                The full GPT model stacks multiple of these blocks sequentially. The Tiny preset uses <strong>6 blocks</strong>. Each block refines the representation — early blocks tend to learn basic syntax, while later blocks learn more abstract semantic patterns.
+            </p>
+
+            <!-- 3.6 Output & Loss -->
+            <h3 class="doc-subtitle">3.6 — Output Projection & Cross-Entropy Loss</h3>
+            <p class="doc-text">
+                After passing through all transformer blocks, a final <code>LayerNorm</code> is applied, followed by a <strong>linear projection</strong> that maps the hidden state back to vocabulary size (50,257 dimensions). This produces <strong>logits</strong> — raw, unnormalized scores for every possible next token.
+            </p>
+            <div class="math-block">
+                <span class="comment">// Final output</span><br>
+                x = <span class="keyword">LayerNorm</span>(x) <span class="comment">// Final normalization</span><br>
+                logits = <span class="keyword">Linear</span>(x) <span class="comment">// [batch × seq_len × 50257]</span><br><br>
+                <span class="comment">// During training: compute loss</span><br>
+                loss = <span class="keyword">CrossEntropy</span>(logits, targets)<br><br>
+                <span class="comment">// Cross-entropy loss measures how "surprised" the model is by the</span><br>
+                <span class="comment">// correct answer. If the model assigns high probability to the correct</span><br>
+                <span class="comment">// next token, loss is LOW. If it's surprised, loss is HIGH.</span><br><br>
+                <span class="comment">// A perfect model: loss → 0 (never surprised)</span><br>
+                <span class="comment">// Random guessing with 50,257 tokens: loss ≈ 10.82 (ln(50257))</span><br>
+                <span class="comment">// A good small model on Shakespeare: loss ≈ 3.9-4.2</span>
+            </div>
+
+            <!-- 3.7 Weight Tying -->
+            <h3 class="doc-subtitle">3.7 — Weight Tying</h3>
+            <p class="doc-text">
+                The <strong>token embedding</strong> matrix (which converts token IDs → vectors) and the <strong>output projection</strong> matrix (which converts vectors → token probabilities) have the exact same shape: <code>[50257 × n_embd]</code>. VV-GPT3 <strong>ties</strong> them together — they share the same physical memory and learn the same weights.
+            </p>
+            <p class="doc-text">
+                This has two benefits: it reduces the parameter count by ~20% (eliminating ~19M duplicate parameters in the Tiny model), and it creates a mathematical symmetry where the model's understanding of "what a token means" (embedding) is the same as its understanding of "when to output a token" (projection).
+            </p>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 4: MODEL PRESETS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-sliders"></i> Model Architecture Presets</h2>
+            <p class="doc-text">
+                VV-GPT3 ships with 6 pre-configured model sizes. The key architectural dimensions are: number of transformer <strong>layers</strong> (depth), number of attention <strong>heads</strong> (parallel attention patterns), and <strong>embedding dimension</strong> (vector width).
+            </p>
+            <div class="glass-panel overflow-hidden">
+                <table class="preset-table m-0">
+                    <thead>
+                        <tr>
+                            <th>Preset</th>
+                            <th>Layers</th>
+                            <th>Heads</th>
+                            <th>Embed Dim</th>
+                            <th>Head Size</th>
+                            <th>FFN Size</th>
+                            <th>~Parameters</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="color: var(--accent-emerald);">Nano</td>
+                            <td>3</td><td>3</td><td>144</td><td>48</td><td>576</td><td>~8.0M</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-emerald);">Micro</td>
+                            <td>4</td><td>4</td><td>192</td><td>48</td><td>768</td><td>~2.5M</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-cyan);">Tiny</td>
+                            <td>6</td><td>6</td><td>384</td><td>64</td><td>1536</td><td>~25.7M</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-cyan);">Small</td>
+                            <td>8</td><td>8</td><td>512</td><td>64</td><td>2048</td><td>~44M</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-indigo);">Medium</td>
+                            <td>12</td><td>12</td><td>768</td><td>64</td><td>3072</td><td>~124M</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-indigo);">Large</td>
+                            <td>16</td><td>16</td><td>1024</td><td>64</td><td>4096</td><td>~253.0M</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="doc-text" style="margin-top: 16px; font-size: 0.9rem;">
+                <strong>Head Size</strong> = Embed Dim / Heads. <strong>FFN Size</strong> = 4 × Embed Dim (standard GPT-2 expansion factor).
+                The actual parameter count depends on <code>block_size</code> and <code>vocab_size</code>, and is reduced by weight tying.
+            </p>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 5: TRAINING PROCESS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-graph-up-arrow"></i> The Training Process</h2>
+            <p class="doc-text">
+                Training is the process of adjusting the millions of numerical parameters (weights) inside the network so that it becomes better at predicting the next token. Here is exactly what happens at each training step:
+            </p>
+
+            <h3 class="doc-subtitle">5.1 — The Training Loop</h3>
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <p class="doc-text mb-0"><strong>Sample a batch:</strong> Randomly pick <code>batch_size</code> (e.g., 64) chunks of <code>block_size</code> (e.g., 256) consecutive tokens from the training data. The input is tokens [0…254], and the target is tokens [1…255] (shifted by one).</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <p class="doc-text mb-0"><strong>Forward pass:</strong> Feed the input through the entire model (embeddings → transformer blocks → output projection) to produce logits for every position.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <p class="doc-text mb-0"><strong>Compute loss:</strong> Compare the model's predictions (logits) against the actual next tokens (targets) using cross-entropy loss. This produces a single number measuring how wrong the model is.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">4</div>
+                <p class="doc-text mb-0"><strong>Backward pass (Backpropagation):</strong> Compute the gradient of the loss with respect to every single parameter in the network. This tells us the direction and magnitude each parameter should be adjusted to reduce the loss.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">5</div>
+                <p class="doc-text mb-0"><strong>Gradient clipping:</strong> If any gradient is excessively large (norm > 1.0), scale all gradients down. This prevents "exploding gradients" that can destabilize training.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">6</div>
+                <p class="doc-text mb-0"><strong>Optimizer step (AdamW):</strong> Update all parameters using the AdamW optimizer, which maintains per-parameter momentum and adaptive learning rates, plus weight decay for regularization.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">7</div>
+                <p class="doc-text mb-0"><strong>Repeat</strong> for the configured number of iterations (e.g., 2000–3000).</p>
+            </div>
+
+            <h3 class="doc-subtitle">5.2 — Training Loss vs Validation Loss</h3>
+            <p class="doc-text">
+                The dataset is split 90/10 into <strong>training data</strong> and <strong>validation data</strong>. Training loss is computed on data the model learns from. Validation loss is computed on data the model has <em>never seen</em>.
+            </p>
+            <p class="doc-text">
+                <strong>Training loss</strong> tells you how well the model has memorized the training data. <strong>Validation loss</strong> tells you how well the model has <em>generalized</em> — learned patterns that apply to new text. The gap between these two numbers is the key diagnostic:
+            </p>
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-emerald); font-family: 'Outfit';">📈 Healthy Training</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Both losses are dropping together. The gap between them is small. The model is learning real patterns.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-cyan); font-family: 'Outfit';">📊 Plateau</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Val loss has stopped improving. Training loss may still drop. The model has extracted most learnable patterns.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-rose); font-family: 'Outfit';">⚠️ Overfitting</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Training loss drops but val loss <em>rises</em>. The model is memorizing exact sequences instead of learning patterns. Generated text will be repetitive.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="doc-subtitle">5.3 — Overfitting Detection (The Tripwire)</h3>
+            <p class="doc-text">
+                VV-GPT3 includes an automatic <strong>overfitting tripwire</strong>. The backend monitors validation loss at every evaluation interval. If val_loss increases for <strong>5 consecutive evaluations</strong>, the system fires a warning recommending that you terminate training.
+            </p>
+            <p class="doc-text">
+                Throughout training, the system saves two types of checkpoints: the <strong>latest</strong> checkpoint (most recent state) and the <strong>best</strong> checkpoint (lowest val_loss ever achieved). Even if you train past the optimal point, the best model is always preserved. This is the checkpoint used as your final model.
+            </p>
+
+            <h3 class="doc-subtitle">5.4 — Hyperparameter Guide</h3>
+            <div class="glass-panel overflow-hidden">
+                <table class="preset-table m-0">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>What It Controls</th>
+                            <th>Effect of Increasing</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="color: var(--accent-emerald);">Learning Rate</td>
+                            <td>How large each weight update is</td>
+                            <td>Faster training but risks overshooting minima. Too high → unstable loss. Too low → slow convergence.</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-emerald);">Iterations</td>
+                            <td>Total number of training steps</td>
+                            <td>More exposure to data. Diminishing returns after the model plateaus. Risk of overfitting if too many.</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-cyan);">Block Size</td>
+                            <td>Context window (how many tokens the model can "see" at once)</td>
+                            <td>Better long-range coherence but quadratically more memory and compute. 256 is balanced; 512 for longer context.</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-cyan);">Batch Size</td>
+                            <td>Number of text chunks processed per step</td>
+                            <td>Smoother gradient estimates, faster per-epoch, but more memory. 32–64 is typical.</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-indigo);">Dropout</td>
+                            <td>Fraction of neurons randomly disabled per step</td>
+                            <td>More regularization — forces redundant learning, delays overfitting. 0.1 = light, 0.2 = aggressive.</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--accent-indigo);">Eval Interval</td>
+                            <td>Steps between validation checks</td>
+                            <td>Lower = more frequent monitoring but slower training (validation takes compute). 50 steps is standard.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 6: INFERENCE & GENERATION -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-chat-dots"></i> Inference & Text Generation</h2>
+            <p class="doc-text">
+                Once trained, the model generates text by repeatedly predicting the next token, appending it to the sequence, and feeding it back in. This is called <strong>autoregressive generation</strong>.
+            </p>
+
+            <h3 class="doc-subtitle">6.1 — The Generation Loop</h3>
+            <div class="math-block">
+                <span class="comment">// Autoregressive generation with KV-Caching</span><br><br>
+                <span class="keyword">prompt</span> = tokenize("to be or not to be")<br>
+                <span class="keyword">kv_cache</span> = empty<br><br>
+                <span class="keyword">for</span> i <span class="keyword">in</span> range(max_tokens):<br>
+                &nbsp;&nbsp;<span class="comment">// First iteration: process entire prompt</span><br>
+                &nbsp;&nbsp;<span class="comment">// Later iterations: process ONLY the last token (O(1) speed!)</span><br>
+                &nbsp;&nbsp;logits, kv_cache = <span class="keyword">model</span>(last_token, kv_cache)<br><br>
+                &nbsp;&nbsp;<span class="comment">// Apply temperature scaling</span><br>
+                &nbsp;&nbsp;logits = logits <span class="op">/</span> <span class="val">temperature</span><br><br>
+                &nbsp;&nbsp;<span class="comment">// Convert to probabilities</span><br>
+                &nbsp;&nbsp;probs = <span class="keyword">Softmax</span>(logits)<br><br>
+                &nbsp;&nbsp;<span class="comment">// Sample the next token from the probability distribution</span><br>
+                &nbsp;&nbsp;next_token = <span class="keyword">sample</span>(probs)<br>
+                &nbsp;&nbsp;output.<span class="keyword">append</span>(next_token)
+            </div>
+
+            <h3 class="doc-subtitle">6.2 — KV-Caching (Why Generation Is Fast)</h3>
+            <p class="doc-text">
+                Without caching, generating each new token would require re-processing the <em>entire</em> sequence from scratch — for a 400-token output, that's 400 full forward passes of increasing length. With <strong>KV-Caching</strong>, the model stores the Key and Value tensors from all previous positions in memory. When generating the next token, it only needs to compute attention for the <em>single new token</em> against the cached K/V pairs.
+            </p>
+            <p class="doc-text">
+                This reduces generation from <strong>O(n²)</strong> to <strong>O(n)</strong> total compute, making real-time chat possible even on consumer hardware.
+            </p>
+
+            <h3 class="doc-subtitle">6.3 — Temperature & Sampling</h3>
+            <p class="doc-text">
+                <strong>Temperature</strong> controls the randomness of the model's output by scaling the logits before applying softmax:
+            </p>
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-cyan); font-family: 'Outfit';">🧊 Low (0.1–0.4)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Dividing logits by a small number makes them larger, sharpening the probability distribution. The model almost always picks the highest-probability token. Output is deterministic and repetitive but "safe".</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-emerald); font-family: 'Outfit';">⚖️ Medium (0.6–0.8)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Balanced randomness. The model mostly picks high-probability tokens but occasionally surprises with creative choices. Good default for coherent yet varied output.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-3">
+                        <h6 style="color: var(--accent-rose); font-family: 'Outfit';">🔥 High (1.0–1.5)</h6>
+                        <p class="doc-text mb-0" style="font-size: 0.85rem;">Dividing by a large number flattens the distribution. Lower-probability tokens get a real chance. Output is creative and diverse but can become incoherent at extremes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="doc-subtitle">6.4 — What Gets Saved in a .pt Checkpoint (~350MB)</h3>
+            <p class="doc-text">
+                A <code>.pt</code> file is a serialized PyTorch state dictionary. At ~350MB for a Tiny model, it contains:
+            </p>
+            <div class="glass-panel p-4">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+                    <div><span style="color: var(--accent-emerald);">model</span> — All ~30M learned weight parameters for Tiny (floats, ~100MB uncompressed)</div>
+                    <div><span style="color: var(--accent-emerald);">optimizer</span> — AdamW momentum states: 2 float buffers per parameter (~200MB)</div>
+                    <div><span style="color: var(--accent-cyan);">model_args</span> — Architecture config (layers, heads, embed dim, block size)</div>
+                    <div><span style="color: var(--accent-cyan);">train_config</span> — Training hyperparameters (LR, weight decay, betas)</div>
+                    <div><span style="color: var(--accent-cyan);">processor</span> — Tokenizer mapping (stoi/itos dictionaries for decoding)</div>
+                    <div><span style="color: var(--accent-indigo);">training_metadata</span> — Best val_loss, training/val loss curves, timing data</div>
+                    <div><span style="color: var(--accent-indigo);">iter_num</span> — Which training step this checkpoint was saved at</div>
+                </div>
+            </div>
+            <p class="doc-text" style="margin-top: 14px; font-size: 0.9rem;">
+                The optimizer state accounts for most of the file size — it stores two running averages (first and second moment) for every parameter, which is what allows AdamW to make intelligent per-parameter learning rate adjustments.
+            </p>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 7: SYSTEM ARCHITECTURE -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-diagram-3"></i> System Architecture & Data Flow</h2>
+            <p class="doc-text">
+                The platform is separated into a <strong>Python Backend</strong> (Flask + SocketIO) handling all computation, and a <strong>Vanilla HTML/CSS/JS Frontend</strong> providing the glassmorphic UI. Communication is real-time via WebSockets.
+            </p>
+
+            <h3 class="doc-subtitle">7.1 — Technology Stack</h3>
+            <div>
+                <span class="tech-pill">Python 3.9+</span>
+                <span class="tech-pill">PyTorch 2.0+</span>
+                <span class="tech-pill">Flask</span>
+                <span class="tech-pill">Flask-SocketIO</span>
+                <span class="tech-pill">Tiktoken</span>
+                <span class="tech-pill">Eventlet</span>
+                <span class="tech-pill">Chart.js</span>
+                <span class="tech-pill">Bootstrap 5</span>
+            </div>
+
+            <h3 class="doc-subtitle">7.2 — Real-Time Telemetry Pipeline</h3>
+            <p class="doc-text">
+                During training, the backend runs the training loop in a background thread. At each evaluation interval, it emits SocketIO events to the browser:
+            </p>
+            <div class="math-block">
+                <span class="keyword">Backend (web_app.py)</span><br>
+                ├─ <span class="val">emit_and_record</span>('training_progress', {...}) <span class="comment">// Loss, iteration, ETA</span><br>
+                ├─ <span class="val">emit_and_record</span>('checkpoint_saved', {...}) <span class="comment">// Best/latest saved</span><br>
+                ├─ <span class="val">emit_and_record</span>('training_log', {...}) <span class="comment">// Status messages</span><br>
+                └─ <span class="val">training_event_history[]</span> <span class="comment">// Server-side buffer for page persistence</span><br><br>
+                <span class="keyword">Frontend (train.html)</span><br>
+                ├─ socket.on('training_progress') → <span class="val">updateChart()</span> + <span class="val">updateTelemetry()</span><br>
+                ├─ socket.on('checkpoint_saved') → <span class="val">updateBestLine()</span> + <span class="val">addLogEntry()</span><br>
+                ├─ socket.on('training_log') → <span class="val">addLogEntry()</span> + <span class="val">overfitDetect()</span><br>
+                └─ <span class="val">fetch('/training_history')</span> → <span class="comment">// On page load: replay all events</span>
+            </div>
+            <p class="doc-text">
+                The <code>emit_and_record</code> pattern ensures that every event is both pushed to connected browsers <em>and</em> stored in a server-side buffer (<code>training_event_history</code>). If you navigate away and return, the frontend fetches this history and replays all events, reconstructing the full UI state — logs, chart, telemetry, and overfit detection — with zero data loss.
+            </p>
+
+            <h3 class="doc-subtitle">7.3 — Chat Persistence</h3>
+            <p class="doc-text">
+                The inference chat page stores conversation history in the browser's <code>localStorage</code>, keyed by model name. Switching models loads that model's chat history. Page refreshes preserve the conversation. The active parameter bar (temperature, max tokens, model name) updates in real-time as you adjust settings.
+            </p>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 8: FILE TREE -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section">
+            <h2 class="doc-title"><i class="bi bi-folder2-open"></i> Project File Structure</h2>
+            
+            <div class="file-tree-container">
+                <div class="tree-folder"><i class="bi bi-folder-fill me-2"></i>vv-gpt3/</div>
+                
+                <div class="tree-file">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>web_app.py</span>
+                    <span class="tree-comment">Flask app: routing, training orchestration, SocketIO telemetry, inference API</span>
+                </div>
+                <div class="tree-file">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>desktop_launcher.py</span>
+                    <span class="tree-comment">Launches the Flask server and opens the browser automatically</span>
+                </div>
+                <div class="tree-file">
+                    <span><i class="bi bi-filetype-sh me-2 text-success"></i>VV_GPT3.command</span>
+                    <span class="tree-comment">macOS double-click launcher; activates .venv and starts the server</span>
+                </div>
+                <div class="tree-file">
+                    <span><i class="bi bi-filetype-sh me-2 text-success"></i>create_mac_app.sh</span>
+                    <span class="tree-comment">Generates a .app bundle for the macOS Dock</span>
+                </div>
+                <div class="tree-file">
+                    <span><i class="bi bi-file-text me-2 text-info"></i>requirements.txt</span>
+                    <span class="tree-comment">Python dependencies: torch, flask, flask-socketio, tiktoken, eventlet</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>src/models/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>enhanced_gpt.py</span>
+                    <span class="tree-comment">GPT model: GPTConfig, CausalSelfAttention, MLP, Block, GPT, generate()</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>src/training/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>train.py</span>
+                    <span class="tree-comment">Training loop: get_batch, estimate_loss, LR scheduler, AdamW config</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>data_loader.py</span>
+                    <span class="tree-comment">DataProcessor: file loading, BPE tokenization, train/val splitting</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>src/chat/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-py me-2 text-warning"></i>chat.py</span>
+                    <span class="tree-comment">Inference engine: checkpoint loading, KV-cached generation, sampling</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>templates/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>base.html</span>
+                    <span class="tree-comment">Master layout: glassmorphic CSS system, sidebar nav, shared scripts</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>index.html</span>
+                    <span class="tree-comment">Dashboard: quick-start cards, system health strip</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>train.html</span>
+                    <span class="tree-comment">Training console: parameter forms, Chart.js live graph, log terminal, overfit plugin</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>chat.html</span>
+                    <span class="tree-comment">Inference chat: model selector, temp/token controls, localStorage persistence</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>models.html</span>
+                    <span class="tree-comment">Models Hub: checkpoint cards, training history sparklines, delete actions</span>
+                </div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-filetype-html me-2 text-danger"></i>about.html</span>
+                    <span class="tree-comment">This page — full architecture & theory documentation</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>models/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-file-earmark-binary me-2 text-info"></i>{model_name}.pt</span>
+                    <span class="tree-comment">Trained PyTorch checkpoints with embedded metadata and loss histories</span>
+                </div>
+
+                <div class="tree-folder mt-3 ms-3"><i class="bi bi-folder-fill me-2"></i>uploads/</div>
+                <div class="tree-file ms-4">
+                    <span><i class="bi bi-file-text me-2 text-info"></i>input_*.txt</span>
+                    <span class="tree-comment">Uploaded training data files (temporary, created during training)</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SECTION 9: CREDITS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="doc-section" style="margin-bottom: 60px;">
+            <h2 class="doc-title"><i class="bi bi-heart-fill"></i> Credits & References</h2>
+            <p class="doc-text">
+                This project is built on the shoulders of foundational research in deep learning:
+            </p>
+            <div class="glass-panel p-4">
+                <div style="font-size: 0.95rem; color: var(--text-secondary); line-height: 2;">
+                    <div>📄 <strong>Vaswani et al. (2017)</strong> — <em>"Attention Is All You Need"</em> — Introduced the Transformer architecture and scaled dot-product attention.</div>
+                    <div>📄 <strong>Radford et al. (2019)</strong> — <em>"Language Models are Unsupervised Multitask Learners"</em> — The GPT-2 paper. Defined the decoder-only causal transformer for text generation.</div>
+                    <div>📄 <strong>Loshchilov & Hutter (2019)</strong> — <em>"Decoupled Weight Decay Regularization"</em> — The AdamW optimizer used in training.</div>
+                    <div>📄 <strong>Dao et al. (2022)</strong> — <em>"FlashAttention: Fast and Memory-Efficient Exact Attention"</em> — The fused attention kernel used via PyTorch SDPA.</div>
+                    <div style="margin-top: 12px;">🔧 <strong>Andrej Karpathy</strong> — <em>nanoGPT</em> — Direct inspiration for the clean, minimal GPT-2 reimplementation approach.</div>
+                    <div>🔧 <strong>OpenAI</strong> — <em>Tiktoken</em> — The BPE tokenizer library used for text encoding/decoding.</div>
+                </div>
+            </div>
+            <p class="doc-text text-center" style="margin-top: 30px; font-size: 1.1rem;">
+                Made with ❤️ by <strong style="color: var(--accent-indigo);">Xavier Blake</strong>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

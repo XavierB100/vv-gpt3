@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Models Hub - VV-GPT3 Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+    .models-header {
+        margin-bottom: 30px;
+    }
+    
+    .models-header h2 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 2rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .model-card {
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--accent-indigo);
+    }
+
+    .model-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .model-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+    }
+
+    .metric-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0,0,0,0.3);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border-glass);
+        margin-right: 8px;
+        margin-bottom: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+    }
+
+    .metric-badge.loss { color: var(--accent-emerald); }
+    .metric-badge.size { color: var(--accent-cyan); }
+    .metric-badge.vocab { color: var(--accent-indigo); }
+
+    .card-actions {
+        margin-top: auto;
+        display: flex;
+        gap: 10px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-glass);
+    }
+    
+    .btn-action {
+        flex: 1;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-glass);
+        color: var(--text-primary);
+        padding: 8px 0;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        background: var(--accent-indigo);
+        color: white;
+        border-color: var(--accent-indigo);
+    }
+    
+    .btn-delete {
+        background: rgba(244, 63, 94, 0.1);
+        color: var(--accent-rose);
+        border-color: rgba(244, 63, 94, 0.2);
+    }
+    .btn-delete:hover {
+        background: var(--accent-rose);
+        color: white;
+        border-color: var(--accent-rose);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--bg-surface);
+        border: 1px dashed var(--border-glass);
+        border-radius: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="models-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="bi bi-cpu-fill"></i> Models Hub</h2>
+        <p class="text-secondary mb-0">Manage your trained PyTorch checkpoint files (.pt)</p>
+    </div>
+    <a href="{{ url_for('train_page') }}" class="btn-glow text-decoration-none">
+        <i class="bi bi-plus-lg"></i> Train New
+    </a>
+</div>
+
+{% if models %}
+<div class="row g-4">
+    {% for model in models %}
+    <div class="col-md-6 col-lg-4">
+        <div class="glass-panel model-card" style="border-top: 4px solid var(--accent-indigo); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+            
+            <div class="model-title d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <i class="bi bi-diagram-3-fill" style="color: var(--accent-indigo); font-size: 1.2rem; margin-right: 8px;"></i>
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem;">{{ model.name }}</span>
+                </div>
+                <div class="spinner-grow text-success spinner-grow-sm" role="status" style="animation-duration: 2s; width: 0.8rem; height: 0.8rem;" title="Node Online">
+                    <span class="visually-hidden">Online</span>
+                </div>
+            </div>
+            
+            <div class="model-meta mb-3" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+                <i class="bi bi-clock-history"></i> Last synced: {{ model.modified }}
+            </div>
+            
+            <!-- Dynamic Metrics -->
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <div class="metric-badge loss" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
+                    <i class="bi bi-hdd-network-fill"></i> {{ "%.1f"|format(model.size / (1024*1024)) }} MB
+                </div>
+                <div class="metric-badge size" style="background: rgba(6,182,212,0.05); border-color: rgba(6,182,212,0.2);">
+                    <i class="bi bi-cpu-fill"></i> Params: {{ model.params }}
+                </div>
+                <div class="metric-badge vocab" style="background: rgba(99,102,241,0.05); border-color: rgba(99,102,241,0.2);">
+                    <i class="bi bi-fonts"></i> Vocab: {{ model.vocab_size }}
+                </div>
+            </div>
+            
+            <!-- Training History (if available) -->
+            {% if model.training_metadata %}
+            <div class="mb-3 p-3" style="background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid var(--border-glass);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--accent-emerald); margin-bottom: 8px; letter-spacing: 0.05em;">Training History</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-secondary);">
+                    <div>📊 Best Val Loss: <span style="color: var(--accent-emerald); font-weight: 600;">{{ "%.4f"|format(model.training_metadata.best_val_loss) }}</span></div>
+                    <div>🎯 Best Step: <span style="color: var(--accent-cyan);">{{ model.training_metadata.best_val_loss_step }}</span></div>
+                    <div>⏱️ Total Time: <span style="color: var(--text-primary);">{{ "%d"|format(model.training_metadata.total_training_time_sec // 60) }}m {{ "%d"|format(model.training_metadata.total_training_time_sec % 60) }}s</span></div>
+                    <div>🏆 Time to Best: <span style="color: var(--text-primary);">{{ "%d"|format(model.training_metadata.time_to_best_sec // 60) }}m {{ "%d"|format(model.training_metadata.time_to_best_sec % 60) }}s</span></div>
+                    <div>📄 Dataset: <span style="color: var(--text-primary);">{{ "{:,}".format(model.training_metadata.dataset_size_chars) }} chars</span></div>
+                    <div>🔧 LR: <span style="color: var(--text-primary);">{{ model.training_metadata.learning_rate }}</span></div>
+                </div>
+                {% if model.training_metadata.val_loss_history %}
+                <div style="position: relative; height: 180px; width: 100%; margin-top: 15px; margin-bottom: 15px;">
+                    <canvas id="sparkline-{{ loop.index }}"></canvas>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="card-actions mt-auto d-flex gap-2 pt-3" style="border-top: 1px solid var(--border-glass);">
+                <a href="{{ url_for('chat_page') }}?model={{ model.name }}" class="btn-action flex-grow-1 text-center text-decoration-none py-2" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; color: var(--text-primary); transition: all 0.2s;">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i> Initialize
+                </a>
+                <form action="{{ url_for('delete_model', model_name=model.name) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to permanently delete this neural network node?');">
+                    <button type="submit" class="btn-action btn-delete px-3 py-2 h-100" title="Decommission Node" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); border-radius: 8px; color: var(--accent-rose); transition: all 0.2s;">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state glass-panel p-5 text-center mx-auto" style="max-width: 600px; margin-top: 50px;">
+    <i class="bi bi-diagram-2-fill" style="font-size: 4rem; color: var(--border-glass); margin-bottom: 20px; display: block;"></i>
+    <h4 class="text-white mb-3" style="font-family: 'Outfit', sans-serif;">No Neural Nodes Active</h4>
+    <p class="text-secondary mb-4">Your core network is empty. Initialize a new matrix to begin.</p>
+    <a href="{{ url_for('train_page') }}" class="btn-glow text-decoration-none px-4 py-2">
+        <i class="bi bi-rocket-takeoff-fill me-2"></i> Launch Training Sequence
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Render sparklines for models with val_loss_history
+    {% for model in models %}
+    {% if model.training_metadata and model.training_metadata.val_loss_history %}
+    (function() {
+        // We have val_loss_history, try to get train_loss_history too
+        const valData = {{ model.training_metadata.val_loss_history | tojson }};
+        const trainData = {{ model.training_metadata.train_loss_history | default('[]') | tojson }};
+        
+        const canvas = document.getElementById('sparkline-{{ loop.index }}');
+        if (!canvas || valData.length === 0) return;
+        
+        const evalInterval = {{ model.training_metadata.get('eval_interval', 50) }};
+        const labels = valData.map((_, i) => i * evalInterval);
+
+        const datasets = [
+            {
+                label: 'Validation Loss',
+                data: valData,
+                borderColor: '#10b981',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointBackgroundColor: '#10b981',
+                tension: 0.3
+            }
+        ];
+
+        if (trainData && trainData.length > 0) {
+            datasets.unshift({
+                label: 'Training Loss',
+                data: trainData,
+                borderColor: '#6366f1',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointBackgroundColor: '#6366f1',
+                tension: 0.3
+            });
+        }
+
+        // Find best val loss index
+        const bestIdx = valData.indexOf(Math.min(...valData));
+        
+        // Best step line plugin (same as training page)
+        const bestStepPlugin = {
+            id: 'bestStepLine-{{ loop.index }}',
+            afterDraw(chart) {
+                if (bestIdx < 0) return;
+                const meta = chart.getDatasetMeta(chart.data.datasets.length - 1); // val loss is last dataset
+                const point = meta.data[bestIdx];
+                if (!point) return;
+                const ctx = chart.ctx;
+                const x = point.x;
+                const top = chart.chartArea.top;
+                const bottom = chart.chartArea.bottom;
+                const right = chart.chartArea.right;
+                
+                // Red overfit zone to the right of best step
+                ctx.save();
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.06)';
+                ctx.fillRect(x, top, right - x, bottom - top);
+                
+                // Dashed vertical line
+                ctx.beginPath();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.stroke();
+                
+                // Label
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = "9px 'JetBrains Mono', monospace";
+                ctx.textAlign = 'center';
+                ctx.fillText('Best: ' + (bestIdx * evalInterval), x, top - 4);
+                ctx.restore();
+            }
+        };
+
+        new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            plugins: [bestStepPlugin],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                layout: {
+                    padding: { top: 14 }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: { 
+                    legend: { 
+                        display: true,
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            usePointStyle: true,
+                            boxWidth: 6
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(14, 18, 26, 0.9)',
+                        titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Step ' + context[0].label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        display: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { size: 9 }, maxTicksLimit: 8 }
+                    },
+                    y: { 
+                        display: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { size: 9 } }
+                    }
+                }
+            }
+        });
+    })();
+    {% endif %}
+    {% endfor %}
+});
+</script>
+{% endblock %}

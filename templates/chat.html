@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Inference Chat - VV-GPT3 Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chat-layout {
+        display: flex;
+        height: calc(100vh - 120px);
+        gap: 20px;
+    }
+
+    /* Side Settings Panel */
+    .chat-settings-panel {
+        width: 380px;
+        flex-shrink: 0;
+        background: rgba(14, 18, 26, 0.4);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px;
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .settings-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--border-glass);
+        background: rgba(0,0,0,0.2);
+    }
+    
+    .settings-body {
+        padding: 24px;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    /* Main Chat Interface */
+    .chat-main {
+        flex-grow: 1;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        backdrop-filter: blur(12px);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .chat-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border-glass);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0,0,0,0.2);
+    }
+
+    /* Chat Messages Container */
+    .chat-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+    }
+
+    /* Chat Bubbles */
+    .message-user {
+        align-self: flex-end;
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 20px 20px 4px 20px;
+        padding: 14px 20px;
+        margin: 8px 0;
+        max-width: 80%;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        font-size: 15px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .message-bot {
+        align-self: flex-start;
+        background: rgba(0,0,0,0.2);
+        color: var(--text-primary);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px 20px 20px 4px;
+        padding: 14px 20px;
+        margin: 8px 0;
+        max-width: 80%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        font-size: 15px;
+    }
+
+    .message-bot.error-msg {
+        background: rgba(244, 63, 94, 0.1);
+        border-color: rgba(244, 63, 94, 0.4);
+    }
+
+    /* Typing Indicator */
+    .typing-indicator {
+        align-self: flex-start;
+        background: transparent;
+        padding: 10px 15px;
+        border-radius: 20px;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .typing-dots span {
+        display: inline-block;
+        width: 6px; height: 6px;
+        background: var(--accent-indigo);
+        border-radius: 50%;
+        animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typingBounce {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Input Area */
+    .chat-footer {
+        padding: 24px;
+        background: rgba(0,0,0,0.2);
+        border-top: 1px solid var(--border-glass);
+    }
+    
+    .input-group-custom {
+        display: flex;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 6px;
+        transition: all 0.3s ease;
+    }
+    .input-group-custom:focus-within {
+        border-color: var(--accent-indigo);
+        box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    }
+    
+    .input-group-custom input {
+        flex-grow: 1;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: white;
+        padding: 12px 16px;
+        font-size: 1rem;
+    }
+    
+    .btn-send {
+        background: var(--gradient-primary);
+        border: none;
+        color: white;
+        border-radius: 12px;
+        padding: 0 24px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-send:hover:not(:disabled) {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(99,102,241,0.4);
+    }
+    .btn-send:disabled {
+        opacity: 0.5;
+        background: var(--text-muted);
+    }
+
+    @media (max-width: 991px) {
+        .chat-layout { flex-direction: column; height: auto; }
+        .chat-settings-panel { width: 100%; }
+        .chat-main { height: 600px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if models %}
+<div class="chat-layout">
+    
+    <!-- LEFT: Model Settings Panel -->
+    <div class="chat-settings-panel">
+        <div class="settings-header">
+            <h5 class="mb-1" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-cpu-fill text-indigo" style="color: var(--accent-indigo)"></i> Neural Core</h5>
+            <small class="text-secondary">Engine selection & parameters</small>
+        </div>
+        
+        <div class="settings-body">
+            <div class="mb-4">
+                <label class="form-label text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 600;">Load Model</label>
+                <select class="form-select" id="modelSelect">
+                    <option value="">Choose a checkpoint...</option>
+                    {% for model in models %}
+                    <option value="{{ model.name }}" {% if request.args.get('model') == model.name %}selected{% endif %}>
+                        {{ model.name }} ({{ model.params }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="modelInfo" class="p-3 mb-4 d-none" style="background: rgba(99,102,241,0.05); border: 1px dashed var(--accent-indigo); border-radius: 12px;">
+                <small>
+                    <div style="color: var(--accent-indigo); font-weight: 700; margin-bottom: 4px;">ACTIVE ENGINE</div>
+                    <div id="modelName" class="text-white fw-bold"></div>
+                    <div id="modelDetails" class="text-secondary mt-1" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; word-break: break-all;"></div>
+                </small>
+            </div>
+
+            <!-- Sampling Sliders -->
+            <label class="form-label text-muted text-uppercase mt-2" style="font-size: 0.75rem; font-weight: 600;">Sampling Parameters</label>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between">
+                    <label for="temperature" class="form-label mb-1">Temperature</label>
+                    <span id="tempValue" style="color: var(--accent-cyan); font-family: 'JetBrains Mono'; fw-bold;">0.8</span>
+                </div>
+                <input type="range" class="form-range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.8">
+                <small class="text-muted" style="font-size: 0.75rem;">Higher = more creative/chaotic</small>
+            </div>
+            
+            <div class="mb-5">
+                <div class="d-flex justify-content-between">
+                    <label for="maxLength" class="form-label mb-1">Max Length</label>
+                    <span id="lengthValue" style="color: var(--accent-emerald); font-family: 'JetBrains Mono'; fw-bold;">200</span>
+                </div>
+                <input type="range" class="form-range" id="maxLength" min="50" max="500" step="25" value="200">
+                <small class="text-muted" style="font-size: 0.75rem;">Max tokens per generation</small>
+            </div>
+
+            <!-- Utilities -->
+            <div class="mt-auto d-flex flex-column gap-2">
+                <button class="btn btn-outline-danger w-100 py-2" onclick="clearChat()">
+                    <i class="bi bi-trash3"></i> Clear Memory
+                </button>
+                <button class="btn btn-outline-info w-100 py-2" onclick="exportChat()">
+                    <i class="bi bi-download"></i> Export Logs
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RIGHT: Active Chat Viewport -->
+    <div class="chat-main">
+        <div class="chat-header">
+            <div>
+                <span id="chatStatus" class="fw-bold" style="font-family: 'Outfit', sans-serif;">Select a model to initialize connection</span>
+            </div>
+            <span class="badge bg-success d-none" id="modelStatus"><i class="bi bi-check2-circle"></i> Online</span>
+        </div>
+        
+        <!-- Active Parameter Bar -->
+        <div id="paramBar" class="d-none" style="padding: 8px 24px; border-bottom: 1px solid var(--border-glass); background: rgba(0,0,0,0.15); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: rgba(255,255,255,0.45); display: flex; gap: 16px;">
+            <span>🌡️ Temp: <span id="paramTemp" style="color: var(--accent-cyan);">0.8</span></span>
+            <span>📏 Max Tokens: <span id="paramMaxLen" style="color: var(--accent-emerald);">200</span></span>
+            <span>🧠 Model: <span id="paramModel" style="color: var(--accent-indigo);">—</span></span>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            
+            <div class="text-center w-100 m-auto" id="welcomeMessage">
+                <i class="bi bi-chat-heart" style="font-size: 4rem; color: rgba(255,255,255,0.1); margin-bottom: 1rem; display: block;"></i>
+                <h4 style="font-family: 'Outfit', sans-serif;">Awaiting Initialization</h4>
+                <p class="text-secondary mx-auto" style="max-width: 400px;">Load a neural core from the left panel to begin streaming KV-cached tokens.</p>
+            </div>
+            
+            <div id="messages" class="d-flex flex-column w-100"></div>
+            
+            <div class="typing-indicator d-none" id="typingIndicator">
+                <div class="typing-dots pt-1">
+                    <span></span><span></span><span></span>
+                </div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-indigo);">Computing...</span>
+            </div>
+            
+        </div>
+        
+        <div class="chat-footer">
+            <form id="chatForm">
+                <div class="input-group-custom">
+                    <input type="text" id="messageInput" placeholder="Initialize a prompt..." disabled autocomplete="off">
+                    <button type="submit" class="btn-send" id="sendBtn" disabled>
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State if no models exist -->
+<div class="glass-panel text-center p-5 mx-auto" style="max-width: 600px; margin-top: 10vh;">
+    <i class="bi bi-hdd-network-fill" style="font-size: 5rem; color: var(--border-glass);"></i>
+    <h3 class="mt-4" style="font-family: 'Outfit', sans-serif;">No Cores Online</h3>
+    <p class="text-secondary mb-4">You have zero trained models. Navigate to the Training workspace to build your first neural network.</p>
+    <a href="{{ url_for('train_page') }}" class="btn-glow px-4 py-2 text-decoration-none">
+        Launch Training Setup
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let selectedModel = null;
+let chatHistory = [];
+let isGenerating = false;
+let currentTemp = "0.8";
+let currentMaxLen = "200";
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Update temperature display and emit context token
+    document.getElementById('temperature').addEventListener('input', function() {
+        document.getElementById('tempValue').textContent = this.value;
+    });
+    document.getElementById('temperature').addEventListener('change', function() {
+        if (selectedModel && this.value !== currentTemp) {
+            addSystemMessage(`Parameter Updated: Temperature changed from ${currentTemp} to ${this.value}`);
+            currentTemp = this.value;
+        }
+        document.getElementById('paramTemp').textContent = this.value;
+    });
+    
+    // Update length display and emit context token
+    document.getElementById('maxLength').addEventListener('input', function() {
+        document.getElementById('lengthValue').textContent = this.value;
+    });
+    document.getElementById('maxLength').addEventListener('change', function() {
+        if (selectedModel && this.value !== currentMaxLen) {
+            addSystemMessage(`Parameter Updated: Max Length changed from ${currentMaxLen} to ${this.value}`);
+            currentMaxLen = this.value;
+        }
+        document.getElementById('paramMaxLen').textContent = this.value;
+    });
+    
+    // Model selection
+    document.getElementById('modelSelect').addEventListener('change', function() {
+        console.log('Model selection changed:', this.value);
+        if (this.value) {
+            console.log('Selecting model:', this.options[this.selectedIndex].text);
+            selectModel(this.value, this.options[this.selectedIndex].text);
+        } else {
+            console.log('Deselecting model');
+            deselectModel();
+        }
+    });
+    
+    // Chat form
+    document.getElementById('chatForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+    
+    // Enter key handling
+    document.getElementById('messageInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Auto-select model if provided in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelParam = urlParams.get('model');
+    if (modelParam) {
+        const select = document.getElementById('modelSelect');
+        for (let option of select.options) {
+            if (option.value.includes(modelParam)) {
+                select.value = option.value;
+                selectModel(option.value, option.text);
+                break;
+            }
+        }
+    }
+});
+
+function selectModel(modelPath, modelName) {
+    console.log('selectModel called:', modelPath, modelName);
+    selectedModel = modelPath;
+    
+    // Update UI
+    document.getElementById('modelInfo').classList.remove('d-none');
+    document.getElementById('modelName').textContent = modelName;
+    document.getElementById('modelDetails').textContent = `Model: ${modelPath}`;
+    document.getElementById('chatStatus').textContent = 'Model loaded - Ready for generation';
+    document.getElementById('modelStatus').classList.remove('d-none');
+    
+    // Enable chat input
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    console.log('Enabling input elements:', messageInput, sendBtn);
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+    
+    // Hide welcome message
+    document.getElementById('welcomeMessage').style.display = 'none';
+    
+    // Show param bar with model name
+    const paramBar = document.getElementById('paramBar');
+    paramBar.classList.remove('d-none');
+    paramBar.style.display = 'flex';
+    document.getElementById('paramModel').textContent = modelName.split('(')[0].trim();
+    document.getElementById('paramTemp').textContent = document.getElementById('temperature').value;
+    document.getElementById('paramMaxLen').textContent = document.getElementById('maxLength').value;
+    
+    // Restore chat history from localStorage if available
+    const storedChat = JSON.parse(localStorage.getItem('chat_' + modelPath) || '[]');
+    if (storedChat.length > 0) {
+        document.getElementById('messages').innerHTML = '';
+        storedChat.forEach(msg => {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            if (msg.role === 'user') {
+                messageDiv.className = 'message-user';
+                messageDiv.innerHTML = `<strong>You:</strong><br>${escapeHtml(msg.content)}`;
+            } else {
+                messageDiv.className = 'message-bot';
+                messageDiv.innerHTML = `<strong>🤖 AI:</strong><br>${escapeHtml(msg.content)}`;
+            }
+            messagesContainer.appendChild(messageDiv);
+        });
+        chatHistory = storedChat.map(m => ({role: m.role, content: m.content}));
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    } else {
+        // Show welcome chat message
+        addMessage('assistant', `🦾 Neural network loaded. Enter a prompt to begin text generation.`);
+    }
+}
+
+function deselectModel() {
+    selectedModel = null;
+    
+    // Update UI
+    document.getElementById('modelInfo').classList.add('d-none');
+    document.getElementById('chatStatus').textContent = 'Select a model to start generating';
+    document.getElementById('modelStatus').classList.add('d-none');
+    
+    // Disable chat input
+    document.getElementById('messageInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    
+    // Show welcome message
+    document.getElementById('welcomeMessage').style.display = 'block';
+    document.getElementById('messages').innerHTML = '';
+}
+
+function sendMessage() {
+    if (!selectedModel || isGenerating) return;
+    
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message
+    addMessage('user', message);
+    chatHistory.push({role: 'user', content: message});
+    
+    // Clear input
+    input.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Generate AI response
+    generateResponse(message);
+}
+
+function generateResponse(message) {
+    isGenerating = true;
+    document.getElementById('sendBtn').disabled = true;
+    
+    const requestData = {
+        model_name: selectedModel,
+        variant: 'final',
+        message: message,
+        temperature: parseFloat(document.getElementById('temperature').value),
+        max_length: parseInt(document.getElementById('maxLength').value),
+        top_k: 50,
+        top_p: 0.9
+    };
+    
+    fetch('/chat_api', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTypingIndicator();
+        
+        if (data.success) {
+            const response = data.response || 'I apologize, but I couldn\'t generate a response.';
+            const meta = data.elapsed_sec ? `\n\n_[${data.elapsed_sec.toFixed(2)}s · ~${data.tokens_per_sec_estimate.toFixed(1)} tok/s · cache ${data.cache.loaded_models}/${data.cache.max_models}]_` : '';
+            addMessage('assistant', response + meta);
+            chatHistory.push({role: 'assistant', content: response});
+        } else {
+            addMessage('assistant', `❌ Error: ${data.error}`, 'error');
+        }
+        
+        isGenerating = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('messageInput').focus();
+    })
+    .catch(error => {
+        hideTypingIndicator();
+        addMessage('assistant', `❌ Network error: ${error}`, 'error');
+        isGenerating = false;
+        document.getElementById('sendBtn').disabled = false;
+    });
+}
+
+function addMessage(role, content, type = 'normal') {
+    const messagesContainer = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    
+    if (role === 'user') {
+        messageDiv.className = 'message-user';
+        messageDiv.innerHTML = `<strong>You:</strong><br>${escapeHtml(content)}`;
+    } else {
+        messageDiv.className = type === 'error' ? 'message-bot' : 'message-bot';
+        if (type === 'error') {
+            messageDiv.style.backgroundColor = '#ffebee';
+            messageDiv.style.borderLeftColor = '#f44336';
+        }
+        messageDiv.innerHTML = `<strong>🤖 AI:</strong><br>${escapeHtml(content)}`;
+    }
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Persist to localStorage
+    if (selectedModel) {
+        const key = 'chat_' + selectedModel;
+        const stored = JSON.parse(localStorage.getItem(key) || '[]');
+        stored.push({role, content, type});
+        localStorage.setItem(key, JSON.stringify(stored));
+    }
+}
+
+function addSystemMessage(content) {
+    const messagesContainer = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'text-center my-2 sys-msg';
+    messageDiv.innerHTML = `<span class="badge" style="background: rgba(99,102,241,0.1); color: var(--accent-indigo); border: 1px solid var(--border-glass); border-radius: 12px; font-weight: normal; padding: 6px 12px; font-family: 'JetBrains Mono', monospace;"><i class="bi bi-info-circle me-1"></i> [System] ${escapeHtml(content)}</span>`;
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    document.getElementById('typingIndicator').classList.remove('d-none');
+    const container = document.getElementById('chatContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator').classList.add('d-none');
+}
+
+function clearChat() {
+    if (confirm('Are you sure you want to clear the chat history?')) {
+        document.getElementById('messages').innerHTML = '';
+        chatHistory = [];
+        if (selectedModel) {
+            localStorage.removeItem('chat_' + selectedModel);
+            addMessage('assistant', '👋 Chat cleared! What would you like to talk about?');
+        }
+    }
+}
+
+function exportChat() {
+    if (chatHistory.length === 0) {
+        alert('No chat history to export.');
+        return;
+    }
+    
+    const chatText = chatHistory.map(msg => 
+        `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`
+    ).join('\n\n');
+    
+    const blob = new Blob([chatText], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat_history_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/\n/g, '<br>');
+}
+</script>
+{% endblock %}

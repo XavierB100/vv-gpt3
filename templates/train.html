@@ -1,0 +1,1020 @@
+{% extends "base.html" %}
+
+{% block title %}Neural Network Training - VV-GPT3 Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Premium Drag & Drop Zone */
+    .upload-zone {
+        border: 2px dashed var(--accent-indigo);
+        border-radius: 16px;
+        padding: 40px;
+        text-align: center;
+        background: rgba(99, 102, 241, 0.05);
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: var(--accent-emerald);
+        background: rgba(16, 185, 129, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .file-info {
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
+        border: 1px solid var(--accent-emerald);
+    }
+    
+    /* Config Form Sidebar / Horizontal layout */
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    /* Terminal Console */
+    .terminal-container {
+        position: relative;
+        border-radius: 12px;
+        background: #0B0E14; /* True black background for console */
+        border: 1px solid var(--border-glass);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        overflow: hidden;
+    }
+    
+    .terminal-header {
+        background: var(--bg-surface);
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border-glass);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .terminal-dots span {
+        width: 12px; height: 12px; border-radius: 50%;
+        display: inline-block;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    
+    .training-logs {
+        color: var(--accent-emerald);
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 13px;
+        height: 350px;
+        overflow-y: auto;
+        padding: 16px;
+        line-height: 1.5;
+    }
+
+    /* Telemetry HUD */
+    .telemetry-board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .telemetry-cell {
+        flex: 1 1 calc(33% - 12px);
+        min-width: 120px;
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--border-glass);
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .telemetry-cell:hover {
+        border-color: var(--accent-indigo);
+        background: rgba(99,102,241,0.05);
+    }
+
+    .telemetry-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .telemetry-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        margin-top: 4px;
+    }
+
+    .training-progress {
+        display: none;
+    }
+    .training-progress.active {
+        display: block;
+    }
+
+    .progress {
+        background: var(--bg-surface);
+        border-radius: 8px;
+        height: 10px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        background: var(--gradient-primary);
+        box-shadow: 0 0 10px var(--accent-indigo);
+    }
+
+    /* Accordion Customization for Dark Glass Theme */
+    .accordion-item {
+        background: transparent;
+        border: 1px solid var(--border-glass);
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+    .accordion-button {
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: none !important;
+    }
+    .accordion-button:not(.collapsed) {
+        background: rgba(99,102,241,0.1);
+        color: var(--accent-indigo);
+    }
+    .accordion-body {
+        background: rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 1200px) {
+        .telemetry-cell { flex: 1 1 calc(50% - 12px); }
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--text-primary);">
+            <i class="bi bi-rocket-takeoff-fill" style="color: var(--accent-indigo);"></i> Neural Training Engine
+        </h2>
+        <p class="text-secondary mb-0">Configure architecture, load datasets, and monitor backpropagation in real-time.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- LEFT COLUMN: Config -->
+    <div class="col-xl-5">
+        
+        <!-- Step 1: Upload -->
+        <div class="glass-panel p-4 mb-4">
+            <h5 class="mb-3" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-cloud-upload"></i> 1: Dataset</h5>
+            
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <i class="bi bi-file-earmark-text mb-2" style="font-size: 2.5rem; color: var(--accent-indigo); display: block;"></i>
+                <h6 style="color: var(--text-primary);">Select Training Text (.txt)</h6>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;" class="mb-0">Up to 16MB supported. Auto-detects plain text & WhatsApp.</p>
+                <input type="file" id="fileInput" accept=".txt" style="display: none;">
+            </div>
+            
+            <div id="fileInfo" class="file-info mt-3" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1" id="fileName">📄 File Name</h6>
+                        <small class="text-muted" id="fileDetails">Size: 0 KB | Format: Unknown</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger border-0" onclick="clearFile()" title="Remove">
+                        <i class="bi bi-x-circle fs-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Config -->
+        <div class="glass-panel p-4">
+            <h5 class="mb-3" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-sliders"></i> 2: Architecture Layout</h5>
+            
+            <form id="trainingForm">
+                <div class="mb-3">
+                    <label for="modelName" class="form-label">Model Engine Name</label>
+                    <input type="text" class="form-control" id="modelName" placeholder="my-awesome-model" required>
+                </div>
+                
+                <div class="config-grid mb-3">
+                    <div>
+                        <label for="modelSize" class="form-label">Scale <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of learnable parameters. Tiny (~30M) trains fast on a laptop. Larger = smarter but much slower."></i></label>
+                        <select class="form-select" id="modelSize" required>
+                            <option value="nano">Nano (~8M)</option>
+                            <option value="micro">Micro (~11M)</option>
+                            <option value="tiny" selected>Tiny (~30M)</option>
+                            <option value="small">Small (~51M)</option>
+                            <option value="medium">Medium (~124M)</option>
+                            <option value="large">Large (~253M)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="maxIters" class="form-label">Iterations <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How many training steps to run. More = smarter but slower. 2000–5000 is a good range for Shakespeare."></i></label>
+                        <input type="number" class="form-control" id="maxIters" value="2000" min="100" max="20000" required>
+                    </div>
+                </div>
+
+                <div class="config-grid mb-3">
+                    <div>
+                        <label for="learningRate" class="form-label">Learning Rate <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How aggressively the model adjusts each step. 0.0003 is safe. Higher = faster but can become unstable."></i></label>
+                        <select class="form-select" id="learningRate">
+                            <option value="0.0001">0.0001 - Conservative</option>
+                            <option value="0.0003" selected>0.0003 - Recommended</option>
+                            <option value="0.001">0.001 - Aggressive</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="progressInterval" class="form-label">Eval Interval <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How often (in steps) the model is tested on unseen data and a checkpoint is saved. Lower = more frequent updates but slightly slower training."></i></label>
+                        <select class="form-select" id="progressInterval">
+                            <option value="25">25 steps</option>
+                            <option value="50" selected>50 steps</option>
+                            <option value="100">100 steps</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="resumeLatest">
+                    <label class="form-check-label text-muted" for="resumeLatest" style="font-size: 0.9rem;">
+                        Resume from latest existing checkpoint
+                    </label>
+                </div>
+
+                <div class="accordion mb-4" id="advAccord">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettings">
+                                <i class="bi bi-gear-fill me-2 text-indigo"></i> Advanced Hyperparameters
+                            </button>
+                        </h2>
+                        <div id="advancedSettings" class="accordion-collapse collapse" data-bs-parent="#advAccord">
+                            <div class="accordion-body">
+                                <div class="mb-3">
+                                    <label for="blockSize" class="form-label">Context Length (Block Size) <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How many characters the model can see at once when predicting the next word. 256 is balanced. 512 lets it understand longer passages but uses more memory."></i></label>
+                                    <select class="form-select" id="blockSize">
+                                        <option value="128">128 - Fast</option>
+                                        <option value="256" selected>256 - Balanced</option>
+                                        <option value="512">512 - Deep</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="batchSize" class="form-label">Batch Size <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="How many text chunks are processed per step. 64 = faster training but uses more GPU memory. Reduce if you get out-of-memory errors."></i></label>
+                                    <select class="form-select" id="batchSize">
+                                        <option value="16">16 - Low VRAM</option>
+                                        <option value="32" selected>32 - Balanced</option>
+                                        <option value="64">64 - Fast</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="dropout" class="form-label">Dropout Factor <i class="bi bi-info-circle" style="color: var(--accent-indigo); cursor: help; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Randomly disables neurons during training to prevent memorization (overfitting). 0.1 = light regularization, 0.2 = aggressive. Set to 0 for very small datasets."></i></label>
+                                    <select class="form-select" id="dropout">
+                                        <option value="0.0">0.0 - None</option>
+                                        <option value="0.1" selected>0.1 - Light</option>
+                                        <option value="0.2">0.2 - Heavy</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-glow w-100 py-3 d-flex justify-content-center align-items-center gap-2" id="startTrainingBtn" disabled>
+                    <i class="bi bi-cpu-fill fs-5"></i> <span class="fs-5">Initialize Training</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Console -->
+    <div class="col-xl-7">
+        
+        <!-- By default, showing a cool "standing by" state until trainingProgress active class overrides it (which JS does via .active class if we edit our css). Wait, JS explicitly changes style.display or adds .active. Let's wrap this. -->
+        <div class="glass-panel p-4 h-100 training-progress" id="trainingProgress" style="display: none; height: 100% !important;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-activity"></i> Mission Control</h5>
+                <span class="badge bg-secondary px-3 py-2" id="trainingStatus">Awaiting Initialization</span>
+            </div>
+
+            <!-- Telemetry Board -->
+            <div class="telemetry-board">
+                <div class="telemetry-cell">
+                    <div class="telemetry-val text-info" id="currentIteration">0</div>
+                    <div class="telemetry-label">Iteration</div>
+                </div>
+                <div class="telemetry-cell">
+                    <div class="telemetry-val text-warning" id="currentLoss">—</div>
+                    <div class="telemetry-label">Current Loss</div>
+                </div>
+                <div class="telemetry-cell" style="border-color: rgba(16, 185, 129, 0.4);">
+                    <div class="telemetry-val text-success" id="bestLoss">—</div>
+                    <div class="telemetry-label">Best Val Loss</div>
+                </div>
+                <div class="telemetry-cell">
+                    <div class="telemetry-val fs-5 pt-2 text-white" id="learningRateDisplay">—</div>
+                    <div class="telemetry-label mt-1">Learning Rate</div>
+                </div>
+                <div class="telemetry-cell">
+                    <div class="telemetry-val fs-5 pt-2 text-white" id="elapsedTime">00:00</div>
+                    <div class="telemetry-label mt-1">Elapsed</div>
+                </div>
+                <div class="telemetry-cell">
+                    <div class="telemetry-val fs-5 pt-2 text-white" id="etaTime">—</div>
+                    <div class="telemetry-label mt-1">ETA</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="d-flex justify-content-between mb-2">
+                <small class="text-secondary text-uppercase fw-bold pb-1 ps-1">Optimization Progress</small>
+                <small id="progressText" class="text-info fw-bold pe-1">0%</small>
+            </div>
+            <div class="progress mb-4">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" style="width: 0%"></div>
+            </div>
+
+            <!-- Divergence Graph -->
+            <div style="position: relative; height: 200px; width: 100%;" class="mb-4">
+                <canvas id="lossGraph"></canvas>
+            </div>
+
+            <!-- Terminal -->
+            <div class="terminal-container mb-4">
+                <div class="terminal-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="terminal-dots">
+                            <span class="dot-red"></span>
+                            <span class="dot-yellow"></span>
+                            <span class="dot-green"></span>
+                        </div>
+                        <small class="text-muted ms-2 code-font">bash - vv-gpt3-train --verbose</small>
+                    </div>
+                    <button class="btn btn-sm px-2 py-0" onclick="exportTrainingLogs()" title="Export Logs" style="color: rgba(255,255,255,0.4); font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                        <i class="bi bi-download"></i> Export
+                    </button>
+                </div>
+                <div class="training-logs" id="trainingLogs">
+                    <div>Waiting for engine initialization...</div>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-warning flex-fill py-2" id="pauseBtn" disabled>
+                    <i class="bi bi-pause-fill"></i> Pause
+                </button>
+                <button type="button" class="btn btn-outline-success flex-fill py-2" id="resumeBtn" disabled>
+                    <i class="bi bi-play-fill"></i> Resume
+                </button>
+                <button type="button" class="btn btn-outline-danger flex-fill py-2" id="stopBtn" disabled>
+                    <i class="bi bi-stop-fill"></i> Terminate
+                </button>
+            </div>
+
+        </div>
+
+        <div class="glass-panel p-5 h-100 d-flex flex-column align-items-center justify-content-center text-center" id="trainingPlaceholder" style="border: 1px dashed var(--border-glass);">
+            <i class="bi bi-cpu" style="font-size: 5rem; color: var(--border-glass);"></i>
+            <h4 class="mt-4 text-secondary">Awaiting Initialization</h4>
+            <p class="text-muted" style="max-width: 400px;">Configure your neural network architecture on the left and upload your dataset to engage the backpropagation engine.</p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let uploadedFile = null;
+let socket = null;
+
+// Initialize Socket.IO connection
+document.addEventListener('DOMContentLoaded', function() {
+    socket = io();
+    let lastSocketEventMs = Date.now();
+
+    // Initialize Bootstrap tooltips for help icons
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    
+    socket.on('connect', function() {
+        console.log('Connected to server');
+        lastSocketEventMs = Date.now();
+    });
+    
+    socket.on('training_progress', function(data) {
+        try {
+            lastSocketEventMs = Date.now();
+            updateTrainingProgress(data);
+        } catch (e) {
+            console.error('Error updating training progress:', e, data);
+        }
+    });
+    socket.on('checkpoint_saved', function(data) {
+        lastSocketEventMs = Date.now();
+        const logs = document.getElementById('trainingLogs');
+        const entry = document.createElement('div');
+        const ts = new Date().toLocaleTimeString();
+        if (data.type === 'best') {
+            bestValStep = data.iteration;
+        }
+        const label = data.type === 'best' ? '💾 Best checkpoint' : '📝 Latest checkpoint';
+        const val = Number.isFinite(data.val_loss) ? data.val_loss.toFixed(4) : '—';
+        
+        let deltaHtml = "";
+        if (data.type === 'latest' && data.delta) {
+             if (data.delta > 0) {
+                 deltaHtml = ` <span class="text-danger fw-bold">(🔼 +${data.delta.toFixed(4)} worse)</span>`;
+             } else {
+                 deltaHtml = ` <span style="color: #10b981;">(🔽 ${data.delta.toFixed(4)} better)</span>`;
+             }
+        }
+        
+        entry.innerHTML = `<span style=\"color: #10b981;\">[${ts}]</span> ${label} saved at step <strong>${data.iteration}</strong> (val_loss=${val})${deltaHtml}`;
+
+        logs.appendChild(entry);
+        logs.scrollTop = logs.scrollHeight;
+        while (logs.children.length > 1000) logs.removeChild(logs.firstChild);
+    });
+    socket.on('training_complete', function(data) {
+        lastSocketEventMs = Date.now();
+        onTrainingComplete(data);
+    });
+    
+    socket.on('training_error', function(data) {
+        lastSocketEventMs = Date.now();
+        onTrainingError(data);
+    });
+    
+    socket.on('training_log', function(data) {
+        lastSocketEventMs = Date.now();
+        if (data.message.includes('OVERFITTING DETECTED')) {
+            overfitDetected = true;
+            addTrainingLogMessage(`<strong class="text-danger">${data.message}</strong>`);
+        } else {
+            addTrainingLogMessage(data.message);
+        }
+    });
+
+    // Start polling fallback with backoff (poll only if no socket events for 10s)
+    startStatusPolling(() => Date.now() - lastSocketEventMs > 10000, 10000);
+
+    // Page persistence: if training is running, replay server-side event history
+    fetch('/training_status').then(r => r.json()).then(status => {
+        if (status.is_training || status.progress >= 100) {
+            fetch('/training_history').then(r => r.json()).then(events => {
+                if (events.length === 0) return;
+                // Show training progress panel
+                showTrainingProgress();
+                // Replay all recorded events silently
+                events.forEach(evt => {
+                    if (evt.event === 'training_progress') {
+                        updateTrainingProgress(evt.data);
+                    } else if (evt.event === 'training_log') {
+                        if (evt.data.message.includes('OVERFITTING DETECTED')) {
+                            overfitDetected = true;
+                            addTrainingLogMessage(`<strong class="text-danger">${evt.data.message}</strong>`);
+                        } else {
+                            addTrainingLogMessage(evt.data.message);
+                        }
+                    } else if (evt.event === 'checkpoint_saved') {
+                        if (evt.data.type === 'best') bestValStep = evt.data.iteration;
+                        const ts = new Date().toLocaleTimeString();
+                        const label = evt.data.type === 'best' ? '💾 Best checkpoint' : '📝 Latest checkpoint';
+                        const val = Number.isFinite(evt.data.val_loss) ? evt.data.val_loss.toFixed(4) : '—';
+                        let deltaHtml = "";
+                        if (evt.data.type === 'latest' && evt.data.delta) {
+                            if (evt.data.delta > 0) {
+                                deltaHtml = ` <span class="text-danger fw-bold">(🔼 +${evt.data.delta.toFixed(4)} worse)</span>`;
+                            } else {
+                                deltaHtml = ` <span style="color: #10b981;">(🔽 ${evt.data.delta.toFixed(4)} better)</span>`;
+                            }
+                        }
+                        const entry = document.createElement('div');
+                        entry.innerHTML = `<span style="color: #10b981;">[replay]</span> ${label} saved at step <strong>${evt.data.iteration}</strong> (val_loss=${val})${deltaHtml}`;
+                        document.getElementById('trainingLogs').appendChild(entry);
+                    } else if (evt.event === 'training_complete') {
+                        onTrainingComplete(evt.data);
+                    }
+                });
+                // Scroll to bottom
+                const logs = document.getElementById('trainingLogs');
+                logs.scrollTop = logs.scrollHeight;
+            });
+        }
+    }).catch(() => {});
+});
+
+// File upload handling
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+// Drag and drop
+uploadZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', function() {
+    uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect(files[0]);
+    }
+});
+
+// File input change
+fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+    }
+});
+
+function handleFileSelect(file) {
+    if (!file.name.endsWith('.txt')) {
+        alert('Please select a .txt file');
+        return;
+    }
+    
+    if (file.size > 16 * 1024 * 1024) {
+        alert('File too large. Maximum size is 16MB.');
+        return;
+    }
+    
+    uploadFile(file);
+}
+
+function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading
+    const fileName = document.getElementById('fileName');
+    fileName.textContent = '📤 Uploading...';
+    document.getElementById('fileInfo').style.display = 'block';
+    
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            uploadedFile = data;
+            showFileInfo(data);
+            document.getElementById('startTrainingBtn').disabled = false;
+        } else {
+            alert('Upload failed: ' + data.message);
+            clearFile();
+        }
+    })
+    .catch(error => {
+        alert('Upload error: ' + error);
+        clearFile();
+    });
+}
+
+function showFileInfo(data) {
+    document.getElementById('fileName').textContent = `📄 ${data.filename}`;
+    document.getElementById('fileDetails').textContent = 
+        `Size: ${(data.size / 1024).toFixed(1)} KB | Format: ${data.metadata.format}`;
+    document.getElementById('fileInfo').style.display = 'block';
+}
+
+function clearFile() {
+    uploadedFile = null;
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('startTrainingBtn').disabled = true;
+    fileInput.value = '';
+}
+
+// Training form handling
+document.getElementById('trainingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!uploadedFile) {
+        alert('Please upload a file first');
+        return;
+    }
+    
+    const config = {
+        file_path: uploadedFile.file_path,
+        data_type: 'auto',
+        model_name: document.getElementById('modelName').value,
+        model_size: document.getElementById('modelSize').value,
+        max_iters: parseInt(document.getElementById('maxIters').value),
+        learning_rate: parseFloat(document.getElementById('learningRate').value),
+        block_size: parseInt(document.getElementById('blockSize').value),
+        batch_size: parseInt(document.getElementById('batchSize').value),
+        dropout: parseFloat(document.getElementById('dropout').value),
+        progress_interval: parseInt(document.getElementById('progressInterval').value),
+        resume: document.getElementById('resumeLatest').checked
+    };
+    
+    startTraining(config);
+});
+
+function startTraining(config) {
+    fetch('/start_training', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showTrainingProgress();
+        } else {
+            alert('Training failed to start: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error starting training: ' + error);
+    });
+}
+
+function showTrainingProgress() {
+    document.getElementById('trainingProgress').style.display = 'block';
+    const placeholder = document.getElementById('trainingPlaceholder');
+    placeholder.classList.remove('d-flex');
+    placeholder.style.display = 'none';
+    document.getElementById('trainingProgress').classList.add('active');
+    document.getElementById('startTrainingBtn').disabled = true;
+    document.getElementById('pauseBtn').disabled = false;
+    document.getElementById('resumeBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = false;
+    
+    // UI Update Status
+    document.getElementById('trainingStatus').textContent = 'Live Execution...';
+    document.getElementById('trainingStatus').className = 'badge bg-success px-3 py-2';
+    
+    // Initialize progress display
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressText').textContent = '0%';
+    document.getElementById('currentIteration').textContent = '0';
+    document.getElementById('currentLoss').textContent = '—';
+    document.getElementById('bestLoss').textContent = '—';
+    document.getElementById('learningRateDisplay').textContent = '—';
+    document.getElementById('elapsedTime').textContent = '00:00:00';
+    document.getElementById('etaTime').textContent = '—';
+    
+    // Clear graph data
+    if (lossChart) {
+        lossChart.data.labels = [];
+        lossChart.data.datasets[0].data = [];
+        lossChart.data.datasets[1].data = [];
+        lossChart.update();
+    }
+    overfitDetected = false;
+    
+    // Clear and add initialization message to logs
+    const logs = document.getElementById('trainingLogs');
+    logs.innerHTML = '';
+    const initEntry = document.createElement('div');
+    initEntry.innerHTML = `<span style=\"color: #10b981;\">[${new Date().toLocaleTimeString()}]</span> <strong style=\"color: #3b82f6;\">🚀 Initializing training system...</strong>`;
+    logs.appendChild(initEntry);
+    
+    const dataEntry = document.createElement('div');
+    dataEntry.innerHTML = `<span style=\"color: #10b981;\">[${new Date().toLocaleTimeString()}]</span> 📂 Loading and processing training data...`;
+    logs.appendChild(dataEntry);
+    
+    const modelEntry = document.createElement('div');
+    modelEntry.innerHTML = `<span style=\"color: #10b981;\">[${new Date().toLocaleTimeString()}]</span> 🧠 Building neural network model...`;
+    logs.appendChild(modelEntry);
+    
+    // Scroll to progress section
+    document.getElementById('trainingProgress').scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
+
+// Polling fallback in case Socket.IO events are delayed
+let statusPoller = null;
+function startStatusPolling(shouldPollFn, intervalMs = 10000) {
+    if (statusPoller) return;
+    statusPoller = setInterval(() => {
+        try {
+            if (typeof shouldPollFn === 'function' && !shouldPollFn()) {
+                return; // skip polling while socket appears active
+            }
+        } catch (_) {}
+        fetch('/training_status')
+            .then(r => r.json())
+            .then(s => {
+                updateTrainingProgress({
+                    progress: s.progress,
+                    iteration: s.iteration,
+                    max_iterations: s.max_iterations,
+                    current_loss: s.current_loss,
+                    best_loss: s.best_loss,
+                    lr: s.learning_rate,
+                    elapsed_sec: s.elapsed_sec,
+                    eta_sec: s.eta_sec
+                });
+            })
+            .catch(() => {});
+    }, intervalMs);
+}
+// default start if no socket yet
+startStatusPolling(() => true, 10000);
+
+// Control buttons
+const pauseBtn = document.getElementById('pauseBtn');
+pauseBtn.addEventListener('click', () => {
+    fetch('/pause_training', {method: 'POST'});
+});
+const resumeBtn = document.getElementById('resumeBtn');
+resumeBtn.addEventListener('click', () => {
+    fetch('/resume_training', {method: 'POST'});
+});
+const stopBtn = document.getElementById('stopBtn');
+stopBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to stop training?')) {
+        fetch('/stop_training', {method: 'POST'});
+    }
+});
+
+function fmtNum(n, digits=4, fallback='—') {
+    return Number.isFinite(n) ? n.toFixed(digits) : fallback;
+}
+function fmtExp(n, digits=2, fallback='—') {
+    return Number.isFinite(n) ? n.toExponential(digits) : fallback;
+}
+function fmtTime(sec) {
+    if (!Number.isFinite(sec)) return '—';
+    sec = Math.max(0, Math.floor(sec));
+    const h = String(Math.floor(sec/3600)).padStart(2,'0');
+    const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    return `${h}:${m}:${s}`;
+}
+
+let __lastLoggedIter = -1;
+let lossChart = null;
+let overfitDetected = false;
+let bestValStep = null;
+
+// Chart.js plugin: draw vertical "best step" line + red overfit zone
+const overfitZonePlugin = {
+    id: 'overfitZone',
+    afterDraw(chart) {
+        if (bestValStep === null) return;
+        const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
+        const labels = chart.data.labels;
+        const idx = labels.indexOf(bestValStep);
+        if (idx === -1) return;
+        const x = xScale.getPixelForValue(idx);
+        const ctx = chart.ctx;
+        // Red shading to the right
+        ctx.save();
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.06)';
+        ctx.fillRect(x, yScale.top, chart.chartArea.right - x, yScale.bottom - yScale.top);
+        // Dashed vertical line
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x, yScale.top);
+        ctx.lineTo(x, yScale.bottom);
+        ctx.stroke();
+        // Label
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '10px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Best: ${bestValStep}`, x, yScale.top - 4);
+        ctx.restore();
+    }
+};
+
+// Initialize Chart.js
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('lossGraph').getContext('2d');
+    lossChart = new Chart(ctx, {
+        type: 'line',
+        plugins: [overfitZonePlugin],
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Training Loss',
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    data: []
+                },
+                {
+                    label: 'Validation Loss',
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    data: []
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            spanGaps: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255,255,255,0.6)',
+                        font: { size: 11, family: 'Inter' },
+                        boxWidth: 12,
+                        padding: 12
+                    }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    display: true,
+                    ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                }
+            }
+        }
+    });
+});
+
+function updateTrainingProgress(data) {
+    // Update progress bar and stats
+    document.getElementById('progressBar').style.width = (data.progress || 0) + '%';
+    document.getElementById('progressText').textContent = (data.progress || 0) + '%';
+    document.getElementById('currentIteration').textContent = data.iteration ?? 0;
+    document.getElementById('currentLoss').textContent = fmtNum(data.current_loss);
+    document.getElementById('bestLoss').textContent = fmtNum(data.best_loss);
+    document.getElementById('learningRateDisplay').textContent = fmtExp(data.lr);
+    document.getElementById('elapsedTime').textContent = fmtTime(data.elapsed_sec);
+    document.getElementById('etaTime').textContent = fmtTime(data.eta_sec);
+    
+    // Update Chart — handle duplicate events for same iteration
+    if (lossChart && data.iteration % Number(document.getElementById('progressInterval').value) === 0) {
+        const idx = lossChart.data.labels.indexOf(data.iteration);
+        if (idx === -1) {
+            // New data point
+            lossChart.data.labels.push(data.iteration);
+            lossChart.data.datasets[0].data.push(data.current_loss);
+            let vData = lossChart.data.datasets[1].data;
+            if (data.val_loss !== undefined && data.val_loss !== null) {
+                vData.push(data.val_loss);
+            } else {
+                vData.push(null);
+            }
+        } else {
+            // Update existing point (second event carries val_loss)
+            lossChart.data.datasets[0].data[idx] = data.current_loss;
+            if (data.val_loss !== undefined && data.val_loss !== null) {
+                lossChart.data.datasets[1].data[idx] = data.val_loss;
+            }
+        }
+        lossChart.update();
+    }
+    
+    // Add user-friendly log entry only when iteration changes and every 10 steps (always on eval)
+    const logs = document.getElementById('trainingLogs');
+    const isEval = Number.isFinite(data.val_loss);
+    if (data.iteration === __lastLoggedIter) {
+        return; // avoid duplicates
+    }
+    if (!isEval && Number.isFinite(data.iteration) && data.iteration % 10 !== 0) {
+        return; // throttle to every 10 iterations
+    }
+    __lastLoggedIter = data.iteration;
+    const logEntry = document.createElement('div');
+    
+    const timestamp = new Date().toLocaleTimeString();
+    
+    // Status label based on val_loss trend (not train vs val comparison)
+    let lossImprovement = "📊 Learning...";
+    if (overfitDetected) {
+        lossImprovement = "⚠️ Overfitting";
+    } else if (lossChart && lossChart.data.datasets[1].data.length >= 2) {
+        // Compare latest val_loss to previous val_loss
+        const valData = lossChart.data.datasets[1].data.filter(v => v !== null);
+        if (valData.length >= 2) {
+            const latest = valData[valData.length - 1];
+            const prev = valData[valData.length - 2];
+            if (latest <= prev) {
+                lossImprovement = "📈 Improving!";
+            } else {
+                lossImprovement = "📊 Plateau";
+            }
+        }
+    }
+    
+    const valLossText = isEval ? `, Validation: ${fmtNum(data.val_loss)}` : "";
+    
+    logEntry.innerHTML = `<span style=\"color: #10b981;\">[${timestamp}]</span> Step <strong>${data.iteration}</strong>/${data.max_iterations || '?'} - Loss: <strong style=\"color: #f59e0b;\">${fmtNum(data.current_loss)}</strong>${valLossText} ${lossImprovement}`;
+    
+    logs.appendChild(logEntry);
+    logs.scrollTop = logs.scrollHeight;
+    
+    // Remove old log entries if too many (keep last 1000)
+    while (logs.children.length > 1000) {
+        logs.removeChild(logs.firstChild);
+    }
+}
+// End Checkpoints
+
+function onTrainingComplete(data) {
+    document.getElementById('trainingStatus').textContent = 'Completed';
+    document.getElementById('trainingStatus').className = 'badge bg-success';
+    
+    const logs = document.getElementById('trainingLogs');
+    const logEntry = document.createElement('div');
+    const finalLossText = (data.final_loss !== null && data.final_loss !== undefined) ? data.final_loss.toFixed(4) : '—';
+    logEntry.innerHTML = `<strong style=\"color: #00ff00;\">🎉 Training completed! Model \"${data.model_name}\" saved with final loss: ${finalLossText}</strong>`;
+    logs.appendChild(logEntry);
+    if (data.final_model_path) {
+        const p = document.createElement('div');
+        p.innerHTML = `📁 Final model: <code>${data.final_model_path}</code>`;
+        logs.appendChild(p);
+    }
+    if (data.best_model_path) {
+        const p = document.createElement('div');
+        p.innerHTML = `🏆 Best checkpoint: <code>${data.best_model_path}</code>`;
+        logs.appendChild(p);
+    }
+    if (data.latest_model_path) {
+        const p = document.createElement('div');
+        p.innerHTML = `📝 Latest checkpoint: <code>${data.latest_model_path}</code>`;
+        logs.appendChild(p);
+    }
+    if (data.sample_text) {
+        const sample = document.createElement('pre');
+        sample.style.whiteSpace = 'pre-wrap';
+        sample.style.marginTop = '10px';
+        sample.textContent = `--- Sample generation ---\n${data.sample_text}`;
+        logs.appendChild(sample);
+    }
+    logs.scrollTop = logs.scrollHeight;
+    
+    // Show success message and redirect option
+    setTimeout(() => {
+        if (confirm('Training completed successfully! Would you like to chat with your new model?')) {
+            window.location.href = '/chat';
+        }
+    }, 2000);
+}
+
+function onTrainingError(data) {
+    document.getElementById('trainingStatus').textContent = 'Error';
+    document.getElementById('trainingStatus').className = 'badge bg-danger';
+    
+    const logs = document.getElementById('trainingLogs');
+    const logEntry = document.createElement('div');
+    logEntry.innerHTML = `<strong style="color: #ff0000;">❌ Training failed: ${data.error}</strong>`;
+    logs.appendChild(logEntry);
+    logs.scrollTop = logs.scrollHeight;
+    
+    document.getElementById('startTrainingBtn').disabled = false;
+}
+
+function addTrainingLogMessage(message) {
+    const logs = document.getElementById('trainingLogs');
+    const logEntry = document.createElement('div');
+    const timestamp = new Date().toLocaleTimeString();
+    logEntry.innerHTML = `<span style="color: #10b981;">[${timestamp}]</span> ${message}`;
+    logs.appendChild(logEntry);
+    logs.scrollTop = logs.scrollHeight;
+    
+    // Remove old log entries if too many (keep last 1000)
+    while (logs.children.length > 1000) {
+        logs.removeChild(logs.firstChild);
+    }
+}
+
+function exportTrainingLogs() {
+    const logs = document.getElementById('trainingLogs');
+    const lines = Array.from(logs.children).map(el => el.textContent).join('\n');
+    const modelName = document.getElementById('modelName').value || 'training';
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${modelName}_training_log.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+</script>
+{% endblock %}

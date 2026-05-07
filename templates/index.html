@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - VV-GPT3 Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dashboard-header {
+        margin-bottom: 50px;
+        position: relative;
+        text-align: center;
+        padding-top: 40px;
+    }
+    
+    .dashboard-header h1 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 3rem;
+        letter-spacing: -1px;
+        color: white;
+        margin-bottom: 12px;
+    }
+    
+    .dashboard-header p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    .landing-card {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        padding: 40px 30px;
+        text-align: center;
+        border-radius: 24px;
+        border: 1px solid var(--border-glass);
+        background: rgba(14, 18, 26, 0.4);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .landing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .landing-card.card-train:hover { border-color: var(--accent-indigo); }
+    .landing-card.card-chat:hover { border-color: var(--accent-cyan); }
+    .landing-card.card-hub:hover { border-color: var(--accent-emerald); }
+
+    .card-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 24px;
+        transition: all 0.4s ease;
+    }
+
+    .card-train .card-icon {
+        background: rgba(99, 102, 241, 0.05);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        color: var(--accent-indigo);
+    }
+    
+    .card-chat .card-icon {
+        background: rgba(6, 182, 212, 0.05);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        color: var(--accent-cyan);
+    }
+    
+    .card-hub .card-icon {
+        background: rgba(16, 185, 129, 0.05);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: var(--accent-emerald);
+    }
+
+    .landing-card:hover .card-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .card-train:hover .card-icon { background: var(--accent-indigo); color: white; box-shadow: 0 0 30px rgba(99,102,241,0.4); }
+    .card-chat:hover .card-icon { background: var(--accent-cyan); color: white; box-shadow: 0 0 30px rgba(6,182,212,0.4); }
+    .card-hub:hover .card-icon { background: var(--accent-emerald); color: white; box-shadow: 0 0 30px rgba(16,185,129,0.4); }
+
+    .card-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+
+    .card-desc {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px;">
+    <div class="dashboard-header">
+        <h1>Welcome to VV-GPT3</h1>
+        <p>Your central hub for local AI model training and inference.</p>
+    </div>
+
+    <!-- Core Actions Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <a href="{{ url_for('train_page') }}" class="landing-card card-train">
+                <div class="card-icon">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                </div>
+                <div class="card-title">Train Model</div>
+                <p class="card-desc">Upload a text dataset and launch a local backpropagation engine. Monitor loss and parameters live.</p>
+            </a>
+        </div>
+        
+        <div class="col-md-4">
+            <a href="{{ url_for('chat_page') }}" class="landing-card card-chat">
+                <div class="card-icon">
+                    <i class="bi bi-chat-heart-fill"></i>
+                </div>
+                <div class="card-title">Inference Chat</div>
+                <p class="card-desc">Load a saved neural checkpoint and interact directly with your locally trained model.</p>
+            </a>
+        </div>
+        
+        <div class="col-md-4">
+            <a href="{{ url_for('models_page') }}" class="landing-card card-hub">
+                <div class="card-icon">
+                    <i class="bi bi-diagram-3-fill"></i>
+                </div>
+                <!-- Dynamic Quick Stat embed -->
+                <div style="position: absolute; top: 15px; right: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-emerald); font-weight: 700;">
+                    {{ system_info.models_count }} ONLINE
+                </div>
+                <div class="card-title">Models Hub</div>
+                <p class="card-desc">Manage, preview metrics, and systematically clear your compiled checkpoint matrices.</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Subtle health strip -->
+    <div class="text-center" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: rgba(255,255,255,0.25); letter-spacing: 0.03em;">
+        {{ system_info.models_count }} model{{ 's' if system_info.models_count != 1 else '' }} trained · {{ system_info.device }} · {{ "%.1f"|format(system_info.models_disk_mb) }} MB used
+    </div>
+</div>
+{% endblock %}

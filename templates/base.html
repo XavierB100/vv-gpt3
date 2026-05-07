@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VV-GPT3 Studio{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            /* Phase 2 Ultra-Premium Palette */
+            --bg-base: #07090E;        /* Abyss dark */
+            --bg-surface: #0E121A;     /* Soft panel */
+            --bg-elevated: #161D29;    /* Hovered panel */
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Glassmorphism 2.0 Border/Gloss */
+            --border-glass: rgba(255, 255, 255, 0.05);
+            --border-glow: rgba(99, 102, 241, 0.3);
+            
+            /* High-fidelity Accents */
+            --accent-indigo: #6366f1;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            
+            /* Dynamic Gradients */
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            --gradient-nav: linear-gradient(180deg, rgba(14,18,26,0.6) 0%, rgba(7,9,14,0.8) 100%);
+        }
+        
+        * {
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-elevated) var(--bg-base);
+        }
+        
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Background Orbs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+        
+        body::before {
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(0,0,0,0) 70%);
+            top: -200px; left: -200px;
+            animation: floatOrb 25s ease-in-out infinite alternate;
+        }
+        
+        body::after {
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, rgba(0,0,0,0) 70%);
+            bottom: -200px; right: -100px;
+            animation: floatOrb 20s ease-in-out infinite alternate-reverse;
+        }
+        
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--gradient-nav);
+            border-right: 1px solid var(--border-glass);
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.7rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0 24px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+        
+        .sidebar-brand i {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+        }
+
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 24px;
+        }
+        .nav-heading {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 8px;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateX(4px);
+        }
+        
+        .nav-link:hover i {
+            transform: scale(1.1);
+            color: var(--accent-indigo);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.05);
+        }
+        .nav-link.active i {
+            color: var(--accent-indigo);
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+        }
+
+        /* --- Main Content Area --- */
+        .workspace {
+            margin-left: 260px;
+            flex-grow: 1;
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- Global Glassmorphism Cards --- */
+        .glass-panel {
+            background: rgba(14, 18, 26, 0.4);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Form Elements --- */
+        .form-control, .form-select {
+            background: rgba(0,0,0,0.2) !important;
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary) !important;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: rgba(0,0,0,0.3) !important;
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        /* --- Fancy Buttons --- */
+        .btn-glow {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: inherit;
+            filter: blur(12px);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        .btn-glow:hover::before {
+            opacity: 0.6;
+        }
+
+        /* Flash Messages */
+        .flash-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+        .alert {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Mobile Overlay */
+        @media (max-width: 991px) {
+            .sidebar { transform: translateX(-100%); }
+            .workspace { margin-left: 0; padding: 20px; }
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Fixed Sidebar -->
+    <aside class="sidebar">
+        <a href="{{ url_for('index') }}" class="sidebar-brand">
+            <i class="bi bi-heptagon-half"></i> VV-GPT3
+        </a>
+        
+        <div class="nav-section">
+            <div class="nav-heading">Studio</div>
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+            <a href="{{ url_for('models_page') }}" class="nav-link {% if request.endpoint == 'models_page' %}active{% endif %}">
+                <i class="bi bi-cpu"></i> Models Hub
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-heading">Workspaces</div>
+            <a href="{{ url_for('train_page') }}" class="nav-link {% if request.endpoint == 'train_page' %}active{% endif %}">
+                <i class="bi bi-rocket-takeoff"></i> Train Model
+            </a>
+            <a href="{{ url_for('chat_page') }}" class="nav-link {% if request.endpoint == 'chat_page' %}active{% endif %}">
+                <i class="bi bi-chat-square-text"></i> Inference Chat
+            </a>
+        </div>
+
+        <div class="nav-section mt-auto">
+            <div class="nav-heading">System</div>
+            <a href="{{ url_for('about_page') }}" class="nav-link {% if request.endpoint == 'about_page' %}active{% endif %}">
+                <i class="bi bi-info-circle"></i> About
+            </a>
+        </div>
+    </aside>
+
+    <!-- Flash Messages -->
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-dismissible fade show d-flex align-items-center" role="alert" style="border-left: 4px solid {% if category == 'error' %}var(--accent-rose){% else %}var(--accent-emerald){% endif %};">
+                        <i class="bi {% if category == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-check-circle-fill text-success{% endif %} me-3 fs-5"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Workspace Area -->
+    <main class="workspace">
+        {% block content %}{% endblock %}
+        
+        <footer class="mt-auto pt-4 pb-2 text-center">
+            <span class="text-muted" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+               <i class="bi bi-lightning-charge-fill" style="color: var(--accent-indigo);"></i> Powered by PyTorch • VV-GPT3 V3 Architecture
+            </span>
+        </footer>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

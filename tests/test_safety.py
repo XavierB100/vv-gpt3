@@ -1,6 +1,6 @@
 import pytest
 
-from src.services.safety import SafetyError, validate_model_name, ensure_within_directory, model_checkpoint_path
+from src.services.safety import SafetyError, validate_model_name, ensure_within_directory, model_checkpoint_path, safe_uploaded_file_path
 
 
 def test_validate_model_name_allows_existing_friendly_names():
@@ -26,3 +26,27 @@ def test_model_checkpoint_path_builds_expected_variants(tmp_path):
     path = model_checkpoint_path("demo", "best", root)
     assert path.name == "demo_best.pt"
     assert path.parent == root.resolve()
+
+
+def test_safe_uploaded_file_path_accepts_upload_response_path(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    uploaded = uploads / "input_123.txt"
+    uploaded.write_text("training text")
+
+    resolved = safe_uploaded_file_path("uploads/input_123.txt", "uploads")
+
+    assert resolved == uploaded.resolve()
+
+
+def test_safe_uploaded_file_path_accepts_uploaded_filename(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    uploaded = uploads / "input_123.txt"
+    uploaded.write_text("training text")
+
+    resolved = safe_uploaded_file_path("input_123.txt", "uploads")
+
+    assert resolved == uploaded.resolve()

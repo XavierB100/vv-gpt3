@@ -64,5 +64,18 @@ def model_checkpoint_path(model_name: str, variant: str = "final", models_dir: s
 
 
 def safe_uploaded_file_path(file_path: str | Path, uploads_dir: str | Path = "uploads") -> Path:
-    """Validate that an uploaded training file path points inside uploads/."""
-    return ensure_within_directory(file_path, uploads_dir)
+    """Validate that an uploaded training file path points inside uploads/.
+
+    The upload endpoint returns paths like ``uploads/input_123.txt`` while some
+    callers may pass just ``input_123.txt``. Accept both forms without turning
+    the former into ``uploads/uploads/input_123.txt``.
+    """
+    root = Path(uploads_dir).resolve()
+    candidate = Path(file_path)
+    if candidate.is_absolute():
+        return ensure_within_directory(candidate, root)
+
+    if candidate.parts and candidate.parts[0] == Path(uploads_dir).name:
+        return ensure_within_directory(Path.cwd() / candidate, root)
+
+    return ensure_within_directory(root / candidate, root)

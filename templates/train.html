@@ -945,8 +945,8 @@ function onTrainingComplete(data) {
     
     const logs = document.getElementById('trainingLogs');
     const logEntry = document.createElement('div');
-    const finalLossText = (data.final_loss !== null && data.final_loss !== undefined) ? data.final_loss.toFixed(4) : '—';
-    logEntry.innerHTML = `<strong style=\"color: #00ff00;\">🎉 Training completed! Model \"${data.model_name}\" saved with final loss: ${finalLossText}</strong>`;
+    const bestLossText = (data.final_loss !== null && data.final_loss !== undefined) ? data.final_loss.toFixed(4) : '—';
+    logEntry.innerHTML = `<strong style=\"color: #00ff00;\">🎉 Training completed! Model \"${data.model_name}\" saved with best validation loss: ${bestLossText}</strong>`;
     logs.appendChild(logEntry);
     if (data.final_model_path) {
         const p = document.createElement('div');

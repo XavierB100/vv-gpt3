@@ -29,5 +29,6 @@ This document records the upgrade work done while converting VV-GPT3 into VV-GPT
 - Added `.github/workflows/smoke.yml` for CI smoke checks.
 - Fixed upload/start-training path validation so both `uploads/<file>.txt` and `<file>.txt` resolve correctly inside `uploads/`; added regression tests.
 - Expanded training UI batch-size choices to include 4 and 8 so recommended Small-model settings are selectable from the web app.
+- Clarified completion log wording to say `best validation loss` instead of `final loss` when the app reports the best checkpoint metric.
 
 Further implementation entries should be added as features land.

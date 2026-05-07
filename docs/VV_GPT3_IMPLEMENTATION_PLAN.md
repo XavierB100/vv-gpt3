@@ -12,7 +12,7 @@
 
 ## Task 1: Project copy and rebrand foundation
 
-- Create `/Users/xavier/AI/hermes-test-workspace/vv-gpt3` from VV-GPT3 excluding runtime artifacts.
+- Create `/Users/xavier/AI/hermes-workspace/vv-gpt3` from VV-GPT3 excluding runtime artifacts.
 - Initialize fresh git repository.
 - Replace current-app branding with VV-GPT3 while preserving history references.
 - Add upgrade log and plan docs.

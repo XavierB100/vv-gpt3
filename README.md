@@ -25,7 +25,7 @@ VV-GPT3 is a **GPT-2-style decoder-only causal Transformer training studio**. It
 ## Quick start
 
 ```bash
-cd /Users/xavier/AI/hermes-test-workspace/vv-gpt3
+cd /Users/xavier/AI/hermes-workspace/vv-gpt3
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt

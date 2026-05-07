@@ -15,7 +15,7 @@ This document records the upgrade work done while converting VV-GPT3 into VV-GPT
 
 ### 2026-05-07
 
-- Created fresh project copy at `/Users/xavier/AI/hermes-test-workspace/vv-gpt3`.
+- Created fresh project copy at `/Users/xavier/AI/hermes-workspace/vv-gpt3`.
 - Excluded `.git`, `.venv`, `__pycache__`, generated `.pyc`, local checkpoint `.pt` files, uploads, and logs from the copy.
 - Initialized a new Git repository on `main`.
 - Added this upgrade log as permanent project documentation.
@@ -30,5 +30,6 @@ This document records the upgrade work done while converting VV-GPT3 into VV-GPT
 - Fixed upload/start-training path validation so both `uploads/<file>.txt` and `<file>.txt` resolve correctly inside `uploads/`; added regression tests.
 - Expanded training UI batch-size choices to include 4 and 8 so recommended Small-model settings are selectable from the web app.
 - Clarified completion log wording to say `best validation loss` instead of `final loss` when the app reports the best checkpoint metric.
+- Renamed local workspace from `/Users/xavier/AI/hermes-test-workspace` to `/Users/xavier/AI/hermes-workspace` and updated README/launcher paths.
 
 Further implementation entries should be added as features land.
